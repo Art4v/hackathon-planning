@@ -14,9 +14,10 @@ def garch(S0, days, mu=0.05, omega=0.00001, alpha=0.1, beta=0.85):
         Z = np.random.standard_normal()
         sigma2 = omega + alpha * r_prev**2 + beta * sigma2
         sigma_t = math.sqrt(sigma2)
-        r = mu * sqrt_dt + sigma_t * sqrt_dt * Z
+        epsilon = sigma_t * Z            # daily innovation (sigma_t is already daily vol)
+        r = mu * dt + epsilon            # daily drift + shock; mu*dt not mu*sqrt_dt
         S = S * (1 + r)
-        r_prev = sigma_t * sqrt_dt * Z   # residual for next GARCH update
+        r_prev = epsilon                 # GARCH feeds on the innovation, not sqrt_dt-scaled noise
         prices.append(S)
 
     return prices
