@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Canary AI</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      background: #f0f2f8;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: #1a1a1a;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #root { height:100vh; display:flex; flex-direction:column; }
+
+    .topbar {
+      height: 5px;
+      background: linear-gradient(90deg, #FFF8A0 0%, #A8BEFF 100%);
+      flex-shrink: 0;
+    }
+
+    .app-layout { display:flex; flex:1; overflow:hidden; }
+
+    /* ── LEFT NAV ── */
+    .leftnav {
+      width: 228px;
+      background: #fff;
+      border-right: 3px solid #ebebeb;
+      display: flex;
+      flex-direction: column;
+      padding: 22px 14px 18px;
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 30px;
+      padding: 0 8px;
+    }
+
+    .brand-name {
+      font-size: 1.35rem;
+      font-weight: 900;
+      color: #1a1a1a;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-name em { color: #8FA4FF; font-style:normal; }
+
+    .nav-section { display:flex; flex-direction:column; gap:3px; flex:1; }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      cursor: pointer;
+      color: #aaa;
+      font-weight: 700;
+      font-size: 0.83rem;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      border: 2.5px solid transparent;
+      transition: background 0.15s, color 0.15s;
+      user-select: none;
+    }
+
+    .nav-item:hover { background:#f5f5f5; color:#555; }
+
+    .nav-item.active {
+      background: #FFFDE8;
+      color: #1a1a1a;
+      border-color: #FFE566;
+    }
+
+    .nav-item.active iconify-icon { color: #c8a800; }
+
+    .nav-divider { height:1px; background:#ebebeb; margin:10px 0; }
+
+    /* ── MAIN ── */
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 26px 30px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    /* ── TOP ROW ── */
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .date-label {
+      font-size: 0.72rem;
+      color: #bbb;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .top-right { display:flex; align-items:center; gap:16px; }
+
+    /* Duolingo-style stat pills */
+    .stat-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 800;
+      font-size: 0.9rem;
+      background: #fff;
+      border: 2.5px solid #ebebeb;
+      border-radius: 99px;
+      padding: 6px 14px 6px 10px;
+      box-shadow: 0 3px 0 #e0e0e0;
+    }
+
+    .toggle-btn {
+      background: #FFF8A0;
+      color: #1a1a1a;
+      border: 2.5px solid #FFE566;
+      border-radius: 12px;
+      padding: 8px 16px;
+      font-weight: 800;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      box-shadow: 0 3px 0 #e6d000;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .toggle-btn:hover  { transform:translateY(1px); box-shadow:0 2px 0 #e6d000; }
+    .toggle-btn:active { transform:translateY(3px); box-shadow:none; }
+
+    /* ── PORTFOLIO BANNER ── */
+    .portfolio-banner {
+      background: #fff;
+      border: 3px solid #ebebeb;
+      border-radius: 24px;
+      padding: 22px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 5px 0 #dcdcdc;
+      flex-shrink: 0;
+    }
+
+    .port-left {}
+
+    .port-label {
+      font-size: 0.7rem;
+      color: #bbb;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .port-value {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: #1a1a1a;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+
+    .port-change {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 8px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      background: #dcfce7;
+      color: #16a34a;
+      padding: 4px 12px;
+      border-radius: 99px;
+      border: 2px solid #bbf7d0;
+    }
+
+    .port-change.dn { background:#fee2e2; color:#dc2626; border-color:#fecaca; }
+
+    .port-right { display:flex; gap:24px; }
+
+    .port-stat {
+      text-align: center;
+      background: #f8f8f8;
+      border: 2px solid #ebebeb;
+      border-radius: 16px;
+      padding: 12px 18px;
+      min-width: 80px;
+    }
+
+    .port-stat-val {
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: #1a1a1a;
+    }
+
+    .port-stat-lbl {
+      font-size: 0.64rem;
+      color: #bbb;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 3px;
+    }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: #1a1a1a;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .live-badge {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      background: #dcfce7;
+      color: #16a34a;
+      border: 2px solid #bbf7d0;
+      padding: 3px 9px;
+      border-radius: 99px;
+    }
+
+    /* ── BUBBLY STOCK CARD ── */
+
+    /* Outer wrapper creates the press effect */
+    .bubble-card-wrap {
+      border-radius: 24px;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+      cursor: pointer;
+    }
+
+    .bubble-card-wrap:hover  { transform: translateY(3px); }
+    .bubble-card-wrap:active { transform: translateY(6px); }
+
+    .bubble-card {
+      background: #fff;
+      border-radius: 22px;
+      border: 3px solid;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Colored header strip */
+    .card-header {
+      padding: 16px 20px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 3px solid;
+    }
+
+    .card-ticker {
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+
+    .card-company {
+      font-size: 0.72rem;
+      font-weight: 700;
+      opacity: 0.6;
+      margin-top: 3px;
+    }
+
+    .card-price-block { text-align: right; }
+
+    .card-price {
+      font-size: 1.1rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .card-change-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 3px 9px;
+      border-radius: 99px;
+      margin-top: 5px;
+      border: 2px solid rgba(0,0,0,0.08);
+      background: rgba(255,255,255,0.55);
+    }
+
+    .card-change-pill.up { color: #15803d; }
+    .card-change-pill.dn { color: #dc2626; }
+
+    /* Chart area */
+    .card-body { padding: 14px 16px 10px; }
+
+    .chart-svg { width:100%; height:72px; }
+
+    /* Footer pills */
+    .card-footer {
+      padding: 10px 16px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .vol-pill {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #999;
+      background: #f5f5f5;
+      border: 2px solid #ebebeb;
+      border-radius: 99px;
+      padding: 4px 10px;
+    }
+
+    .range-pills { display:flex; gap:5px; }
+
+    .range-pill {
+      font-size: 0.63rem;
+      padding: 4px 9px;
+      border-radius: 99px;
+      cursor: pointer;
+      border: 2.5px solid #ddd;
+      color: #aaa;
+      background: none;
+      font-weight: 800;
+      transition: all 0.12s;
+    }
+
+    /* card-theme classes inject the active color */
+    .range-pill.active-y { background:#FFF8A0; color:#7a6c00; border-color:#FFE566; }
+    .range-pill.active-b { background:#D6E4FF; color:#3b52c4; border-color:#A8BEFF; }
+    .range-pill.active-g { background:#d1fae5; color:#065f46; border-color:#6ee7b7; }
+    .range-pill.active-r { background:#fee2e2; color:#991b1b; border-color:#fca5a5; }
+
+    /* ── CARDS LAYOUT ── */
+    /* Bento-ish: row 1 = wide + narrow, row 2 = narrow + wide */
+    .cards-bento {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 16px;
+    }
+
+    /* ── RIGHT SIDEBAR ── */
+    .sidebar {
+      width: 278px;
+      background: #fff;
+      border-left: 3px solid #ebebeb;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow-y: auto;
+      transition: width 0.3s ease, opacity 0.25s ease;
+      opacity: 1;
+    }
+
+    .sidebar.hidden { width:0; opacity:0; overflow:hidden; border-left:none; }
+
+    .sidebar-inner {
+      width: 278px;
+      padding: 22px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .sb-section-title {
+      font-size: 0.74rem;
+      font-weight: 900;
+      color: #1a1a1a;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .wl-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+
+    .wl-item:hover { background:#f8f8f8; }
+    .wl-ticker { font-size:0.86rem; font-weight:800; }
+    .wl-name   { font-size:0.66rem; color:#bbb; font-weight:600; margin-top:1px; }
+    .wl-price  { font-size:0.83rem; font-weight:700; text-align:right; }
+    .wl-chg    { font-size:0.66rem; font-weight:700; }
+    .pos { color:#16a34a; }
+    .neg { color:#dc2626; }
+
+    /* Bubbly order cards in sidebar */
+    .order-bubble {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 2.5px solid;
+      border-radius: 14px;
+      padding: 10px 13px;
+      margin-bottom: 8px;
+      box-shadow: 0 3px 0;
+      transition: transform 0.1s, box-shadow 0.1s;
+      cursor: pointer;
+    }
+
+    .order-bubble:hover  { transform:translateY(2px); }
+    .order-bubble:active { transform:translateY(3px); box-shadow: 0 0 0 transparent !important; }
+
+    .order-bubble.buy  { border-color:#bbf7d0; box-shadow: 0 3px 0 #86efac; background:#f0fdf4; }
+    .order-bubble.sell { border-color:#fecaca; box-shadow: 0 3px 0 #fca5a5; background:#fff5f5; }
+
+    .order-side {
+      font-size: 0.62rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .order-bubble.buy  .order-side { color:#16a34a; }
+    .order-bubble.sell .order-side { color:#dc2626; }
+
+    .order-ticker { font-size:0.82rem; font-weight:800; margin-top:1px; }
+    .order-price  { font-size:0.8rem; font-weight:700; text-align:right; }
+    .order-status { font-size:0.63rem; color:#bbb; margin-top:1px; }
+
+    .alert-item {
+      display: flex;
+      gap: 11px;
+      align-items: flex-start;
+      padding: 9px 0;
+      border-bottom: 1px solid #f2f2f2;
+    }
+
+    .alert-item:last-child { border-bottom:none; }
+
+    .alert-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+
+    .alert-dot.yellow { background:#FFE566; }
+    .alert-dot.blue   { background:#A8BEFF; }
+    .alert-dot.green  { background:#86efac; }
+
+    .alert-text { font-size:0.76rem; color:#555; line-height:1.45; }
+    .alert-time { font-size:0.64rem; color:#bbb; margin-top:2px; }
+
+    .sidebar-footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px 10px;
+      font-size: 0.63rem;
+      color: #ccc;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding-top: 10px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .sidebar-footer span { cursor:pointer; transition:color 0.12s; }
+    .sidebar-footer span:hover { color:#888; }
+
+    ::-webkit-scrollbar { width:4px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:#e0e0e0; border-radius:4px; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState } = React;
+
+/* ── CANARY LOGO ── */
+const CanaryLogo = ({ size = 36 }) => (
+  <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+    <ellipse cx="20" cy="26" rx="12" ry="11" fill="#FFF8A0"/>
+    <ellipse cx="10" cy="27" rx="4.5" ry="8" fill="#FFE566" transform="rotate(-12 10 27)"/>
+    <ellipse cx="30" cy="27" rx="4.5" ry="8" fill="#FFE566" transform="rotate(12 30 27)"/>
+    <ellipse cx="20" cy="28" rx="6.5" ry="7" fill="#fffef0"/>
+    <ellipse cx="20" cy="14" rx="9.5" ry="8.5" fill="#FFF8A0"/>
+    <rect x="8.5" y="10" width="23" height="3" rx="1.5" fill="#2D2D2D"/>
+    <rect x="13" y="2" width="14" height="9" rx="2.5" fill="#2D2D2D"/>
+    <rect x="13" y="9" width="14" height="2" fill="#A8BEFF"/>
+    <circle cx="16" cy="15" r="3.8" fill="white"/>
+    <circle cx="24" cy="15" r="3.8" fill="white"/>
+    <circle cx="16" cy="15" r="2.2" fill="#A8BEFF"/>
+    <circle cx="24" cy="15" r="2.2" fill="#A8BEFF"/>
+    <circle cx="16.6" cy="14.4" r="0.9" fill="#2D2D2D"/>
+    <circle cx="24.6" cy="14.4" r="0.9" fill="#2D2D2D"/>
+    <polygon points="20,18 18,21 22,21" fill="#f0a500"/>
+    <polygon points="20,23 18.2,25.5 20,35 21.8,25.5" fill="#2D2D2D"/>
+    <ellipse cx="16.5" cy="37.5" rx="3.2" ry="1.6" fill="#f0a500"/>
+    <ellipse cx="23.5" cy="37.5" rx="3.2" ry="1.6" fill="#f0a500"/>
+  </svg>
+);
+
+/* ── SPARKLINE ── */
+function SparkLine({ data, color, fillColor }) {
+  const W = 260, H = 70;
+  const min = Math.min(...data), max = Math.max(...data);
+  const range = max - min || 1;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * W;
+    const y = H - ((v - min) / range) * (H - 12) - 4;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const polyFill = `0,${H} ${pts.join(' ')} ${W},${H}`;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="chart-svg">
+      <polygon points={polyFill} fill={fillColor}/>
+      <polyline points={pts.join(' ')} fill="none" stroke={color}
+        strokeWidth="2.8" strokeLinejoin="round" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+/* ── BUBBLE STOCK CARD ── */
+function BubbleCard({ stock }) {
+  const [range, setRange] = useState('1W');
+  const t = stock.theme;
+
+  return (
+    <div className="bubble-card-wrap" style={{ boxShadow: `0 6px 0 ${t.shadow}` }}>
+      <div className="bubble-card" style={{ borderColor: t.border }}>
+
+        {/* Coloured header */}
+        <div className="card-header"
+          style={{ background: t.bg, borderBottomColor: t.border }}>
+          <div>
+            <div className="card-ticker" style={{ color: t.text }}>{stock.ticker}</div>
+            <div className="card-company" style={{ color: t.text }}>{stock.name}</div>
+          </div>
+          <div className="card-price-block">
+            <div className="card-price" style={{ color: t.text }}>{stock.price}</div>
+            <div className={`card-change-pill ${stock.up ? 'up' : 'dn'}`}>
+              {stock.up
+                ? <iconify-icon icon="solar:arrow-up-bold" width="11"/>
+                : <iconify-icon icon="solar:arrow-down-bold" width="11"/>}
+              {stock.change}
+            </div>
+          </div>
+        </div>
+
+        {/* Chart */}
+        <div className="card-body">
+          <SparkLine data={stock.data} color={t.line} fillColor={t.fill}/>
+        </div>
+
+        {/* Footer */}
+        <div className="card-footer">
+          <div className="vol-pill">Vol {stock.vol}</div>
+          <div className="range-pills">
+            {['1D','1W','1M','3M'].map(r => (
+              <button key={r}
+                className={`range-pill ${range === r ? t.activePill : ''}`}
+                onClick={() => setRange(r)}>{r}</button>
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+/* ── THEMES ── */
+const themes = {
+  yellow: {
+    bg:'#FFF8A0', border:'#FFE566', shadow:'#e6d000',
+    text:'#5a4d00', line:'#c8a800', fill:'rgba(200,168,0,0.12)',
+    activePill:'active-y',
+  },
+  blue: {
+    bg:'#D6E4FF', border:'#A8BEFF', shadow:'#7b93e0',
+    text:'#1e3a8a', line:'#4a6cf7', fill:'rgba(74,108,247,0.1)',
+    activePill:'active-b',
+  },
+  green: {
+    bg:'#d1fae5', border:'#6ee7b7', shadow:'#34d399',
+    text:'#064e3b', line:'#059669', fill:'rgba(5,150,105,0.1)',
+    activePill:'active-g',
+  },
+  red: {
+    bg:'#fee2e2', border:'#fca5a5', shadow:'#f87171',
+    text:'#7f1d1d', line:'#dc2626', fill:'rgba(220,38,38,0.09)',
+    activePill:'active-r',
+  },
+};
+
+/* ── DATA ── */
+const STOCKS = [
+  { ticker:'AAPL', name:'Apple Inc.',    price:'$187.42', change:'+1.24%', up:true,  vol:'62.3M', theme:themes.yellow, data:[172,175,174,178,176,180,182,181,184,186,185,187] },
+  { ticker:'TSLA', name:'Tesla Inc.',    price:'$243.11', change:'-2.87%', up:false, vol:'98.1M', theme:themes.red,    data:[260,258,255,253,257,250,248,251,247,245,244,243] },
+  { ticker:'NVDA', name:'NVIDIA Corp.',  price:'$872.55', change:'+4.63%', up:true,  vol:'41.7M', theme:themes.green,  data:[830,838,842,835,848,854,858,862,856,868,870,873] },
+  { ticker:'MSFT', name:'Microsoft',     price:'$408.10', change:'+0.87%', up:true,  vol:'18.4M', theme:themes.blue,   data:[400,401,403,402,404,403,405,406,405,407,407,408] },
+];
+
+const NAV_ITEMS = [
+  { icon:'solar:home-2-bold-duotone',        label:'Dashboard', active:true  },
+  { icon:'solar:chart-2-bold-duotone',        label:'Markets'               },
+  { icon:'solar:wallet-money-bold-duotone',   label:'Portfolio'             },
+  { icon:'solar:clipboard-list-bold-duotone', label:'Orders'                },
+  { icon:'solar:user-circle-bold-duotone',    label:'Profile'               },
+  { icon:'solar:settings-bold-duotone',       label:'Settings', bottom:true },
+];
+
+const WATCHLIST = [
+  { t:'AAPL', n:'Apple Inc.',   p:'$187.42', c:'+1.24%', up:true  },
+  { t:'TSLA', n:'Tesla Inc.',   p:'$243.11', c:'-2.87%', up:false },
+  { t:'NVDA', n:'NVIDIA Corp.', p:'$872.55', c:'+4.63%', up:true  },
+  { t:'MSFT', n:'Microsoft',    p:'$408.10', c:'+0.87%', up:true  },
+  { t:'SPY',  n:'S&P 500 ETF',  p:'$521.30', c:'+0.55%', up:true  },
+];
+
+const ORDERS = [
+  { side:'BUY',  t:'AAPL × 10', p:'$187.00', status:'Filled · 10:32 AM', buy:true  },
+  { side:'SELL', t:'TSLA × 5',  p:'$244.50', status:'Filled · 9:45 AM',  buy:false },
+  { side:'BUY',  t:'NVDA × 2',  p:'$868.00', status:'Pending',            buy:true  },
+];
+
+const ALERTS = [
+  { dot:'yellow', text:'NVDA crossed $870 resistance level',     time:'2 min ago'  },
+  { dot:'blue',   text:'Fed rate decision due at 2:00 PM ET',    time:'15 min ago' },
+  { dot:'green',  text:'AAPL earnings beat estimates by 8%',     time:'1 hr ago'   },
+];
+
+/* ── APP ── */
+function App() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const topNav = NAV_ITEMS.filter(n => !n.bottom);
+  const botNav = NAV_ITEMS.filter(n =>  n.bottom);
+
+  return (
+    <div style={{ height:'100vh', display:'flex', flexDirection:'column' }}>
+      <div className="topbar"/>
+      <div className="app-layout">
+
+        {/* LEFT NAV */}
+        <nav className="leftnav">
+          <div className="brand">
+            <CanaryLogo size={38}/>
+            <div className="brand-name">Canary <em>AI</em></div>
+          </div>
+          <div className="nav-section">
+            {topNav.map((item, i) => (
+              <div key={i} className={`nav-item ${item.active ? 'active' : ''}`}>
+                <iconify-icon icon={item.icon} width="22" height="22"/>
+                {item.label}
+              </div>
+            ))}
+            <div style={{ flex:1 }}/>
+            <div className="nav-divider"/>
+            {botNav.map((item, i) => (
+              <div key={i} className="nav-item">
+                <iconify-icon icon={item.icon} width="22" height="22"/>
+                {item.label}
+              </div>
+            ))}
+          </div>
+        </nav>
+
+        {/* MAIN */}
+        <main className="main-content">
+
+          {/* Top row */}
+          <div className="top-row">
+            <div className="date-label">Tuesday, March 10</div>
+            <div className="top-right">
+              <div className="stat-pill">
+                <iconify-icon icon="solar:fire-bold-duotone" width="18" style={{color:'#fb923c'}}/>
+                7
+              </div>
+              <div className="stat-pill">
+                <iconify-icon icon="solar:diamond-bold-duotone" width="18" style={{color:'#818cf8'}}/>
+                1,240
+              </div>
+              <div className="stat-pill">
+                <iconify-icon icon="solar:heart-bold-duotone" width="18" style={{color:'#f87171'}}/>
+                5
+              </div>
+              <button className="toggle-btn" onClick={() => setSidebarOpen(o => !o)}>
+                <iconify-icon icon="solar:sidebar-minimalistic-bold-duotone" width="17"/>
+                {sidebarOpen ? 'Hide Panel' : 'Show Panel'}
+              </button>
+            </div>
+          </div>
+
+          {/* Portfolio banner */}
+          <div className="portfolio-banner">
+            <div className="port-left">
+              <div className="port-label">Total Portfolio Value</div>
+              <div className="port-value">$142,830<span style={{fontSize:'1.2rem',color:'#bbb'}}>.50</span></div>
+              <div className="port-change">
+                <iconify-icon icon="solar:arrow-up-bold" width="13"/>
+                +$4,420 today · +3.19%
+              </div>
+            </div>
+            <div className="port-right">
+              <div className="port-stat">
+                <div className="port-stat-val" style={{color:'#818cf8'}}>7</div>
+                <div className="port-stat-lbl">Positions</div>
+              </div>
+              <div className="port-stat">
+                <div className="port-stat-val" style={{color:'#fb923c'}}>14</div>
+                <div className="port-stat-lbl">Day Streak</div>
+              </div>
+              <div className="port-stat">
+                <div className="port-stat-val" style={{color:'#16a34a'}}>OPEN</div>
+                <div className="port-stat-lbl">Market</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section label */}
+          <div className="section-label">
+            <iconify-icon icon="solar:graph-new-bold-duotone" width="22" style={{color:'#A8BEFF'}}/>
+            Your Stocks
+            <span className="live-badge">● Live</span>
+          </div>
+
+          {/* Bubbly cards — bento layout */}
+          <div className="cards-bento">
+            {STOCKS.map((s, i) => <BubbleCard key={i} stock={s}/>)}
+          </div>
+
+          <div style={{ height:10 }}/>
+        </main>
+
+        {/* RIGHT SIDEBAR */}
+        <aside className={`sidebar ${sidebarOpen ? '' : 'hidden'}`}>
+          <div className="sidebar-inner">
+
+            {/* Watchlist */}
+            <div>
+              <div className="sb-section-title">
+                <iconify-icon icon="solar:star-bold-duotone" width="16" style={{color:'#fb923c'}}/>
+                Watchlist
+              </div>
+              {WATCHLIST.map((s, i) => (
+                <div key={i} className="wl-item">
+                  <div>
+                    <div className="wl-ticker">{s.t}</div>
+                    <div className="wl-name">{s.n}</div>
+                  </div>
+                  <div>
+                    <div className="wl-price">{s.p}</div>
+                    <div className={`wl-chg ${s.up ? 'pos' : 'neg'}`}>{s.up?'▲':'▼'} {s.c}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Orders */}
+            <div>
+              <div className="sb-section-title">
+                <iconify-icon icon="solar:clipboard-list-bold-duotone" width="16" style={{color:'#86efac'}}/>
+                Recent Orders
+              </div>
+              {ORDERS.map((o, i) => (
+                <div key={i} className={`order-bubble ${o.buy ? 'buy' : 'sell'}`}>
+                  <div>
+                    <div className="order-side">{o.side}</div>
+                    <div className="order-ticker">{o.t}</div>
+                  </div>
+                  <div>
+                    <div className="order-price">{o.p}</div>
+                    <div className="order-status">{o.status}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Alerts */}
+            <div>
+              <div className="sb-section-title">
+                <iconify-icon icon="solar:bell-bold-duotone" width="16" style={{color:'#A8BEFF'}}/>
+                Alerts
+              </div>
+              {ALERTS.map((a, i) => (
+                <div key={i} className="alert-item">
+                  <div className={`alert-dot ${a.dot}`}/>
+                  <div>
+                    <div className="alert-text">{a.text}</div>
+                    <div className="alert-time">{a.time}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="sidebar-footer">
+              {['About','Blog','Careers','Investors','Terms','Privacy'].map(l => (
+                <span key={l}>{l}</span>
+              ))}
+            </div>
+
+          </div>
+        </aside>
+
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
