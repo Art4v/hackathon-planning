@@ -9,7 +9,7 @@ const CanaryLogo = ({ size = 36, showBg = true }) => (
     viewBox="0 0 100 100"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    style={showBg ? { background: '#FFF130', borderRadius: '50%' } : {}}
+    style={showBg ? { background: '#FFF9A0', borderRadius: '10px', border: '1.5px solid #E6D800' } : {}}
   >
     <ellipse cx="50" cy="65" rx="26" ry="24" fill="white" stroke="#000" strokeWidth="2.5"/>
     <circle cx="50" cy="42" r="20" fill="white" stroke="#000" strokeWidth="2.5"/>
@@ -212,7 +212,7 @@ function TickerAvatar({ stock, size = 50, showRing = false }) {
       >
         {stock.ticker}
       </div>
-      {showRing && <span className="online-dot" style={{ background: '#FFF130', border: '2px solid #fff' }} />}
+      {showRing && <span className="online-dot" style={{ background: '#FFF245', border: '2px solid #fff' }} />}
     </div>
   )
 }
@@ -446,7 +446,7 @@ export default function App() {
                     {msg.sent && (
                       <span className="msg-read">
                         {msg.read ? (
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#152DFF" strokeWidth="2.5">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5B6BEF" strokeWidth="2.5">
                             <polyline points="20 6 9 17 4 12"/>
                             <polyline points="25 6 14 17" transform="translate(-5,0)"/>
                           </svg>
