@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from supabase import create_client
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 app = FastAPI()
 db = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_KEY"])

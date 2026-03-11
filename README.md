@@ -32,6 +32,16 @@ Skills practiced: REST API design, CRUD operations, connecting a Python backend 
 
 See [`fast_api/README.md`](fast_api/README.md) for setup instructions.
 
+### `login_page/` — Full-Stack Authentication with FastAPI
+A complete login/signup/dashboard web app built with FastAPI and Supabase, learning how to wire a Python backend to a cloud database with real session management. Built entirely by hand without AI assistance.
+
+- **`main.py`** — FastAPI app with GET/POST routes for login, signup, dashboard, and logout
+- **`templates/`** — Jinja2 HTML templates (login, signup, dashboard)
+- **`static/`** — Static assets (CSS, etc.)
+- **FastAPI** for routing, **Supabase** (Postgres) for persistence, **SessionMiddleware** for auth, **python-dotenv** for secrets
+
+Skills practiced: FastAPI routing, Jinja2 templating, session-based authentication, password hashing, Supabase integration, environment variable hygiene.
+
 ### `ML-stock-price-prediction/` — Machine Learning & Quantitative Finance
 Experimenting with statistical and ML models for financial data.
 
