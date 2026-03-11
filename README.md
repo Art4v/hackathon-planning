@@ -59,6 +59,16 @@ A FastAPI REST API that tracks stock tickers and stores daily OHLCV data using y
 
 Skills practiced: FastAPI lifecycle management, background scheduling, financial data APIs, CSV-based persistence.
 
+### `ui_planning/` — Dashboard UI Prototypes
+Interactive desktop-style dashboard demos for the Canary AI trading platform, built with React (CDN) and GSAP animations.
+
+- **`dashboard_sky_demo.html`** — Main entry point for the animated sky dashboard with draggable windows
+- **`components/`** — Modular React components (SkyLayer, Dock, AppWindow, content panels)
+- **`animations/gsapAnimations.js`** — GSAP-powered animation utilities (cloud drift, bird flight, hover effects, window transitions)
+- Uses GSAP Draggable for window drag, custom resize handlers, and CDN-loaded React with Babel standalone
+
+Skills practiced: GSAP animation library, React component architecture, drag-and-drop UI, modular file structure without build tools.
+
 ## Contributors
 
 | Name | Role |
