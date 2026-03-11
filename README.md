@@ -51,6 +51,14 @@ Experimenting with statistical and ML models for financial data.
 
 Skills practiced: NumPy/pandas data pipelines, statistical modelling, financial simulation.
 
+### `api-integration/` — Real-Time Stock Data Tracking API
+A FastAPI REST API that tracks stock tickers and stores daily OHLCV data using yfinance.
+
+- **`main.py`** — Single-file API with endpoints for tracking, fetching JSON/CSV, and background auto-refresh
+- **yfinance** for market data, **pandas** for CSV storage, **APScheduler** for periodic updates
+
+Skills practiced: FastAPI lifecycle management, background scheduling, financial data APIs, CSV-based persistence.
+
 ## Contributors
 
 | Name | Role |
