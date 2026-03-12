@@ -43,6 +43,47 @@ GET http://localhost:8000/stock/AAPL
 }
 ```
 
+### Live Tracking
+
+Start, stop, and list continuous background tracking for any ticker. While tracking is active, the API polls yfinance every 10 seconds and appends each data point to the ticker's CSV file.
+
+**Start tracking:**
+```
+POST http://localhost:8000/track/AAPL
+```
+```json
+{
+  "status": "tracking",
+  "ticker": "AAPL",
+  "interval_seconds": 10
+}
+```
+
+**Stop tracking:**
+```
+DELETE http://localhost:8000/track/AAPL
+```
+```json
+{
+  "status": "stopped",
+  "ticker": "AAPL"
+}
+```
+
+**List tracked tickers:**
+```
+GET http://localhost:8000/tracking
+```
+```json
+{
+  "tracking": ["AAPL", "TSLA"]
+}
+```
+
+- `POST /track/{ticker}` on an already-tracked ticker returns **409 Conflict**.
+- `POST /track/{ticker}` with an invalid ticker returns **404**.
+- `DELETE /track/{ticker}` on a non-tracked ticker returns **404**.
+
 ### Data persistence
 
 Each successful request automatically saves the fetched data to `data/{TICKER}.csv`. Each attribute is a column heading, and repeated requests append new rows to the file. The `data/` directory is created automatically on the first request.
