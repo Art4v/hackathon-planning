@@ -1,17 +1,34 @@
 window.AnimUtils = {
   /* ── Sky animations (infinite loops) ── */
   animateCloud: function(el, duration, delay) {
-    gsap.fromTo(el,
-      { x: '110vw' },
-      { x: '-120%', duration: duration, delay: delay, ease: 'none', repeat: -1 }
-    );
+    var vw = window.innerWidth;
+    var startX = vw * 1.1;
+    var endX = -(el.offsetWidth * 1.2);
+    var totalDist = startX - endX;
+    var wp1 = startX - totalDist * 0.25;
+    var wp2 = startX - totalDist * 0.75;
+
+    gsap.set(el, { x: startX });
+    var tl = gsap.timeline({ repeat: -1, delay: delay });
+    tl.to(el, { x: wp1, duration: duration * 0.2, ease: 'none' });
+    tl.to(el, { x: wp2, duration: duration * 0.6, ease: 'none' });
+    tl.to(el, { x: endX, duration: duration * 0.2, ease: 'none' });
+    return tl;
   },
 
   animateBird: function(el, duration, delay) {
-    gsap.fromTo(el,
-      { x: '110vw' },
-      { x: -200, duration: duration, delay: delay, ease: 'none', repeat: -1 }
-    );
+    var startX = window.innerWidth * 1.1;
+    var endX = -200;
+    var totalDist = startX - endX;
+    var wp1 = startX - totalDist * 0.25;
+    var wp2 = startX - totalDist * 0.75;
+
+    gsap.set(el, { x: startX });
+    var tl = gsap.timeline({ repeat: -1, delay: delay });
+    tl.to(el, { x: wp1, duration: duration * 0.2, ease: 'none' });
+    tl.to(el, { x: wp2, duration: duration * 0.6, ease: 'none' });
+    tl.to(el, { x: endX, duration: duration * 0.2, ease: 'none' });
+    return tl;
   },
 
   animateFlap: function(wingGroup, speed, delay) {
@@ -25,6 +42,14 @@ window.AnimUtils = {
         repeat: -1,
         yoyo: true }
     );
+  },
+
+  /* ── Star twinkle ── */
+  animateTwinkle: function(el, delay) {
+    gsap.fromTo(el, { opacity: 0.3 }, {
+      opacity: 1, duration: 1.5 + Math.random(), delay: delay,
+      ease: 'power1.inOut', repeat: -1, yoyo: true
+    });
   },
 
   /* ── Mascot bob ── */
@@ -87,5 +112,39 @@ window.AnimUtils = {
   },
   buttonPress: function(el) {
     gsap.to(el, { y: 4, boxShadow: 'none', duration: 0.06 });
+  },
+
+  /* ── Lego merge snap ── */
+  animateSnapMerge: function(el, snapX, snapY, onComplete) {
+    gsap.to(el, { left: snapX, top: snapY, duration: 0.3, ease: 'back.out(1.4)', onComplete: onComplete });
+  },
+  animateSnapPulse: function(el) {
+    gsap.fromTo(el, { boxShadow: '0 0 0 0px rgba(74,108,247,0.4)' },
+      { boxShadow: '0 0 0 8px rgba(74,108,247,0)', duration: 0.4, ease: 'power2.out' });
+  },
+
+  /* ── Lego un-merge ── */
+  animateUnmerge: function(elA, elB, edge, onComplete) {
+    var offset = 25;
+    var propsA = {};
+    var propsB = {};
+    if (edge === 'right' || edge === 'left') {
+      var aDir = edge === 'right' ? '-=' : '+=';
+      var bDir = edge === 'right' ? '+=' : '-=';
+      propsA.left = aDir + offset;
+      propsB.left = bDir + offset;
+    } else {
+      var aDir2 = edge === 'bottom' ? '-=' : '+=';
+      var bDir2 = edge === 'bottom' ? '+=' : '-=';
+      propsA.top = aDir2 + offset;
+      propsB.top = bDir2 + offset;
+    }
+    propsA.duration = 0.25;
+    propsA.ease = 'power2.out';
+    propsB.duration = 0.25;
+    propsB.ease = 'power2.out';
+    propsB.onComplete = onComplete;
+    gsap.to(elA, propsA);
+    gsap.to(elB, propsB);
   },
 };

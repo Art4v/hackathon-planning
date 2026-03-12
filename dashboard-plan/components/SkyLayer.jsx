@@ -20,51 +20,86 @@ const FlyingBird = React.forwardRef(({ style }, ref) => (
   </svg>
 ));
 
-window.SkyLayer = function SkyLayer() {
+// Static star positions so they don't jump on re-render
+var STAR_DATA = (function() {
+  var stars = [];
+  // Simple seeded pseudo-random using a fixed seed
+  var seed = 12345;
+  function rand() { seed = (seed * 16807 + 0) % 2147483647; return (seed - 1) / 2147483646; }
+  for (var i = 0; i < 35; i++) {
+    stars.push({
+      left: rand() * 100,
+      top: rand() * 60,
+      size: 1.5 + rand() * 2.5,
+      delay: rand() * 3
+    });
+  }
+  return stars;
+})();
+
+window.SkyLayer = function SkyLayer({ isNight }) {
   const cloudRefs = React.useRef([]);
   const birdRefs = React.useRef([]);
+  const starRefs = React.useRef([]);
   const { CLOUDS, BIRDS } = window.APP_DATA;
 
   React.useEffect(() => {
-    var tweens = [];
+    var timelines = [];
 
     CLOUDS.forEach(function(c, i) {
       var el = cloudRefs.current[i];
       if (el) {
-        AnimUtils.animateCloud(el, c.duration, c.delay);
-        tweens.push(el);
+        var tl = AnimUtils.animateCloud(el, c.duration, c.delay);
+        timelines.push(tl);
       }
     });
 
-    BIRDS.forEach(function(b, i) {
-      var el = birdRefs.current[i];
-      if (el) {
-        AnimUtils.animateBird(el, b.duration, b.delay);
-        tweens.push(el);
-        var wings = el.querySelectorAll('.bird-wing');
-        wings.forEach(function(w) {
-          AnimUtils.animateFlap(w, b.flapSpeed, b.wingDelay);
-          tweens.push(w);
-        });
-      }
-    });
+    if (!isNight) {
+      BIRDS.forEach(function(b, i) {
+        var el = birdRefs.current[i];
+        if (el) {
+          var tl = AnimUtils.animateBird(el, b.duration, b.delay);
+          timelines.push(tl);
+          var wings = el.querySelectorAll('.bird-wing');
+          wings.forEach(function(w) {
+            AnimUtils.animateFlap(w, b.flapSpeed, b.wingDelay);
+            timelines.push({ kill: function() { gsap.killTweensOf(w); } });
+          });
+        }
+      });
+    }
+
+    if (isNight) {
+      STAR_DATA.forEach(function(s, i) {
+        var el = starRefs.current[i];
+        if (el) {
+          AnimUtils.animateTwinkle(el, s.delay);
+          timelines.push({ kill: function() { gsap.killTweensOf(el); } });
+        }
+      });
+    }
 
     return function() {
-      tweens.forEach(function(el) { gsap.killTweensOf(el); });
+      timelines.forEach(function(tl) { tl.kill(); });
     };
-  }, []);
+  }, [isNight]);
 
   return (
     <>
       {CLOUDS.map((c, i) => (
-        <div key={i} className="cloud"
+        <div key={i} className={'cloud' + (isNight ? ' night' : '')}
           ref={function(el) { cloudRefs.current[i] = el; }}
           style={{ width: c.width, height: Math.round(c.width * 0.35), top: c.top }}/>
       ))}
-      {BIRDS.map((b, i) => (
+      {!isNight && BIRDS.map((b, i) => (
         <FlyingBird key={i}
           ref={function(el) { birdRefs.current[i] = el; }}
           style={{ top: b.top }}/>
+      ))}
+      {isNight && STAR_DATA.map((s, i) => (
+        <div key={i} className="star"
+          ref={function(el) { starRefs.current[i] = el; }}
+          style={{ left: s.left + '%', top: s.top + '%', width: s.size, height: s.size }}/>
       ))}
     </>
   );

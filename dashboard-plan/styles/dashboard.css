@@ -446,59 +446,47 @@ body { font-family:'Segoe UI',system-ui,sans-serif; color:#1a1a1a; }
   transition: left 0.1s, top 0.1s, width 0.1s, height 0.1s;
 }
 
-/* ── TAB BAR ── */
-.tab-bar {
-  display: flex;
-  flex-shrink: 0;
-  border-bottom: 2.5px solid #e5e5e5;
-  background: #fafafa;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.tab-bar::-webkit-scrollbar { display: none; }
-.tab-item {
-  padding: 7px 14px;
-  font-size: 0.74rem;
-  font-weight: 700;
+/* ── MERGE SEAM (invisible hit area for double-click unmerge) ── */
+.merge-seam {
+  position: absolute;
+  pointer-events: auto;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  border-bottom: 2.5px solid transparent;
-  margin-bottom: -2.5px;
-  color: #999;
-  white-space: nowrap;
-  user-select: none;
-  text-transform: capitalize;
 }
-.tab-item:hover { color: #666; background: rgba(0,0,0,0.02); }
-.tab-item.active {
-  font-weight: 800;
-  color: #333;
-  border-bottom-color: #4a6cf7;
-}
-.tab-detach {
-  font-size: 0.7rem;
-  color: #ccc;
-  cursor: grab;
-  padding: 0 2px;
-  letter-spacing: -1px;
-}
-.tab-detach:hover { color: #888; }
 
-/* ── TAB DRAG GHOST ── */
-.tab-drag-ghost {
-  position: fixed;
-  padding: 5px 14px;
+/* ── STARS ── */
+.star {
+  position: absolute;
+  border-radius: 50%;
   background: #fff;
-  border: 2.5px solid #A8BEFF;
-  border-radius: 10px;
-  font-size: 0.74rem;
-  font-weight: 800;
-  color: #333;
   pointer-events: none;
-  z-index: 99999;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-  text-transform: capitalize;
-  white-space: nowrap;
+}
+
+/* ── NIGHT MODE ── */
+.desktop.night { background: #0a1628; }
+
+.cloud.night { background: #1a2a4a; opacity: 0.35; box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+.cloud.night::before, .cloud.night::after { background: #1a2a4a; }
+
+.desktop.night .brand-name { color: #d0d8e8; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+.desktop.night .brand-name em { color: #6a7ec4; }
+
+.desktop.night .dock-cloud-shape { background: rgba(20,30,55,0.85); box-shadow: 0 6px 24px rgba(0,0,0,0.4); }
+.desktop.night .dock-cloud-shape::before,
+.desktop.night .dock-cloud-shape::after { background: rgba(20,30,55,0.85); }
+.desktop.night .dock-title { color: #d0d8e8; }
+.desktop.night .dock-tagline { color: #556; }
+.desktop.night .dock-label { color: #667; }
+
+.night-toggle {
+  position: absolute; top: 18px; right: 20px; z-index: 5;
+  background: rgba(0,0,0,0.08); border: 2px solid rgba(0,0,0,0.12);
+  border-radius: 12px; padding: 6px 12px; font-size: 1.1rem;
+  cursor: pointer; color: #333;
+}
+.night-toggle:hover { background: rgba(0,0,0,0.15); }
+.desktop.night .night-toggle { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); color: #d0d8e8; }
+.desktop.night .night-toggle:hover { background: rgba(255,255,255,0.2); }
+.toggle-auto-dot {
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: #ff9500; margin-left: 4px; vertical-align: middle;
 }

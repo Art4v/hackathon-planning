@@ -1,14 +1,25 @@
-window.CanaryLogo = ({ size=36 }) => (
+window.CanaryLogo = ({ size=36, sleeping=false }) => (
   <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
     {/* Body */}
     <ellipse cx="20" cy="27" rx="10" ry="9" fill="#FFE500"/>
     {/* Head */}
     <circle cx="20" cy="15" r="8.5" fill="#FFE500"/>
     {/* Eyes */}
-    <circle cx="17" cy="14" r="2" fill="#222"/>
-    <circle cx="23" cy="14" r="2" fill="#222"/>
-    <circle cx="17.7" cy="13.3" r="0.7" fill="white"/>
-    <circle cx="23.7" cy="13.3" r="0.7" fill="white"/>
+    {sleeping ? (
+      <>
+        <line x1="15" y1="14" x2="19" y2="14" stroke="#222" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="21" y1="14" x2="25" y2="14" stroke="#222" strokeWidth="1.5" strokeLinecap="round"/>
+        <text x="30" y="10" fontSize="6" fontWeight="bold" fill="#8FA4FF" opacity="0.7">z</text>
+        <text x="33" y="6" fontSize="5" fontWeight="bold" fill="#8FA4FF" opacity="0.5">z</text>
+      </>
+    ) : (
+      <>
+        <circle cx="17" cy="14" r="2" fill="#222"/>
+        <circle cx="23" cy="14" r="2" fill="#222"/>
+        <circle cx="17.7" cy="13.3" r="0.7" fill="white"/>
+        <circle cx="23.7" cy="13.3" r="0.7" fill="white"/>
+      </>
+    )}
     {/* Beak */}
     <polygon points="20,17 17.5,19.5 22.5,19.5" fill="#f0a800"/>
     {/* Wing */}
