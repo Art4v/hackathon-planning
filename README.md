@@ -51,13 +51,13 @@ Experimenting with statistical and ML models for financial data.
 
 Skills practiced: NumPy/pandas data pipelines, statistical modelling, financial simulation.
 
-### `api-integration/` — Real-Time Stock Data Tracking API
-A FastAPI REST API that tracks stock tickers and stores daily OHLCV data using yfinance.
+### `api-integration/` — Simple Stock Data REST API
+A minimal FastAPI REST API that returns live stock data for any ticker symbol.
 
-- **`main.py`** — Single-file API with endpoints for tracking, fetching JSON/CSV, and background auto-refresh
-- **yfinance** for market data, **pandas** for CSV storage, **APScheduler** for periodic updates
+- **`main.py`** — Single GET endpoint (`/stock/{ticker}`) returning price, volume, and market cap as JSON
+- **yfinance** for free, real-time market data — no API key required
 
-Skills practiced: FastAPI lifecycle management, background scheduling, financial data APIs, CSV-based persistence.
+Skills practiced: FastAPI routing, third-party API integration, JSON response design, error handling.
 
 ### `ui_planning/` — Dashboard UI Prototypes
 Interactive desktop-style dashboard demos for the Canary AI trading platform, built with React (CDN) and GSAP animations.
