@@ -20,7 +20,8 @@ window.Dock = function Dock({ windows, openWindow }) {
         <div className="dock-tagline">The trader you always wanted to be</div>
         <div className="dock-icons">
           {DOCK_ITEMS.map(d => {
-            const isOpen = windows.find(w => w.id === d.id)?.open;
+            const isOpen = windows.find(w => w.id === d.id)?.open
+              || windows.some(w => w.open && w.tabs && w.tabs.some(t => t.id === d.id));
             return (
               <div key={d.id} className="dock-item" onClick={() => openWindow(d.id)}>
                 <div className="dock-btn"

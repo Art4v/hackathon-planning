@@ -434,3 +434,71 @@ body { font-family:'Segoe UI',system-ui,sans-serif; color:#1a1a1a; }
 }
 .pay-btn.buy-btn  { background:#d1fae5; color:#065f46; border-color:#6ee7b7; box-shadow:0 4px 0 #34d399; }
 .pay-btn.sell-btn { background:#fee2e2; color:#7f1d1d; border-color:#fca5a5; box-shadow:0 4px 0 #f87171; }
+
+/* ── SNAP INDICATOR ── */
+.snap-indicator {
+  position: absolute;
+  border: 2.5px dashed rgba(74, 108, 247, 0.6);
+  background: rgba(74, 108, 247, 0.08);
+  border-radius: 16px;
+  pointer-events: none;
+  z-index: 9999;
+  transition: left 0.1s, top 0.1s, width 0.1s, height 0.1s;
+}
+
+/* ── TAB BAR ── */
+.tab-bar {
+  display: flex;
+  flex-shrink: 0;
+  border-bottom: 2.5px solid #e5e5e5;
+  background: #fafafa;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tab-bar::-webkit-scrollbar { display: none; }
+.tab-item {
+  padding: 7px 14px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 2.5px solid transparent;
+  margin-bottom: -2.5px;
+  color: #999;
+  white-space: nowrap;
+  user-select: none;
+  text-transform: capitalize;
+}
+.tab-item:hover { color: #666; background: rgba(0,0,0,0.02); }
+.tab-item.active {
+  font-weight: 800;
+  color: #333;
+  border-bottom-color: #4a6cf7;
+}
+.tab-detach {
+  font-size: 0.7rem;
+  color: #ccc;
+  cursor: grab;
+  padding: 0 2px;
+  letter-spacing: -1px;
+}
+.tab-detach:hover { color: #888; }
+
+/* ── TAB DRAG GHOST ── */
+.tab-drag-ghost {
+  position: fixed;
+  padding: 5px 14px;
+  background: #fff;
+  border: 2.5px solid #A8BEFF;
+  border-radius: 10px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #333;
+  pointer-events: none;
+  z-index: 99999;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  text-transform: capitalize;
+  white-space: nowrap;
+}
