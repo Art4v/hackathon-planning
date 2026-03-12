@@ -12,6 +12,11 @@ from zoneinfo import ZoneInfo
 # Create the FastAPI application instance
 app = FastAPI(title="Stock Data API")
 
+# Clear old CSV data on startup
+import shutil
+if os.path.exists("data"):
+    shutil.rmtree("data")
+
 # Dict mapping uppercase ticker -> threading.Event (set = stop signal)
 active_trackers: dict[str, threading.Event] = {}
 
@@ -32,7 +37,7 @@ def backfill_history(ticker: str) -> int:
     """Fetch last 24h of 1-minute intraday data and append to CSV. Returns rows written."""
     stock = yf.Ticker(ticker.upper())
     info = stock.info
-    history = stock.history(period="1d", interval="1m")
+    history = stock.history(period="2d", interval="1m")
 
     if history.empty:
         return 0
