@@ -7,12 +7,67 @@ import csv
 import os
 import threading
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 # Create the FastAPI application instance
 app = FastAPI(title="Stock Data API")
 
 # Dict mapping uppercase ticker -> threading.Event (set = stop signal)
 active_trackers: dict[str, threading.Event] = {}
+
+
+def is_market_open() -> bool:
+    """Check if US stock market is currently open (Mon-Fri 9:30 AM - 4:00 PM ET)."""
+    now = datetime.now(ZoneInfo("America/New_York"))
+    # Weekend check
+    if now.weekday() >= 5:
+        return False
+    # Time check: 9:30 AM to 4:00 PM ET
+    market_open = now.replace(hour=9, minute=30, second=0, microsecond=0)
+    market_close = now.replace(hour=16, minute=0, second=0, microsecond=0)
+    return market_open <= now < market_close
+
+
+def backfill_history(ticker: str) -> int:
+    """Fetch last 24h of 1-minute intraday data and append to CSV. Returns rows written."""
+    stock = yf.Ticker(ticker.upper())
+    info = stock.info
+    history = stock.history(period="1d", interval="1m")
+
+    if history.empty:
+        return 0
+
+    name = info.get("shortName", "N/A")
+    market_cap = info.get("marketCap", None)
+
+    os.makedirs("data", exist_ok=True)
+    filepath = f"data/{ticker.upper()}.csv"
+    headers = [
+        "timestamp", "ticker", "name", "current_price",
+        "day_high", "day_low", "volume", "market_cap",
+    ]
+    file_exists = os.path.exists(filepath)
+
+    rows_written = 0
+    with open(filepath, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=headers)
+        if not file_exists:
+            writer.writeheader()
+        for ts, row in history.iterrows():
+            entry = {
+                "timestamp": ts.isoformat(),
+                "ticker": ticker.upper(),
+                "name": name,
+                "current_price": row["Close"],
+                "day_high": row["High"],
+                "day_low": row["Low"],
+                "volume": int(row["Volume"]),
+                "market_cap": market_cap,
+            }
+            writer.writerow(entry)
+            rows_written += 1
+
+    return rows_written
 
 
 def fetch_and_save(ticker: str) -> dict | None:
@@ -52,10 +107,13 @@ def fetch_and_save(ticker: str) -> dict | None:
 
 
 def tracking_loop(ticker: str, stop_event: threading.Event):
-    """Background loop that fetches stock data every 10 seconds until stopped."""
+    """Background loop that fetches stock data every 10s during market hours."""
     while not stop_event.is_set():
-        fetch_and_save(ticker)
-        stop_event.wait(10)
+        if is_market_open():
+            fetch_and_save(ticker)
+            stop_event.wait(10)       # poll every 10s during market hours
+        else:
+            stop_event.wait(60)       # check once per minute when market is closed
 
 
 @app.get("/stock/{ticker}")
@@ -92,6 +150,9 @@ def start_tracking(ticker: str):
             detail=f"Ticker '{ticker_upper}' not found or has no market data.",
         )
 
+    # Seed CSV with last 24h of intraday data
+    history_rows = backfill_history(ticker_upper)
+
     stop_event = threading.Event()
     active_trackers[ticker_upper] = stop_event
     thread = threading.Thread(
@@ -99,7 +160,12 @@ def start_tracking(ticker: str):
     )
     thread.start()
 
-    return {"status": "tracking", "ticker": ticker_upper, "interval_seconds": 10}
+    return {
+        "status": "tracking",
+        "ticker": ticker_upper,
+        "interval_seconds": 10,
+        "history_rows": history_rows,
+    }
 
 
 @app.delete("/track/{ticker}")

@@ -45,7 +45,11 @@ GET http://localhost:8000/stock/AAPL
 
 ### Live Tracking
 
-Start, stop, and list continuous background tracking for any ticker. While tracking is active, the API polls yfinance every 10 seconds and appends each data point to the ticker's CSV file.
+Start, stop, and list continuous background tracking for any ticker.
+
+When tracking starts, the API automatically **backfills the last 24 hours** of 1-minute intraday data into the CSV so you have immediate history. After that, live polling begins.
+
+**Market-hours awareness:** The tracker only polls during US market hours (Mon–Fri, 9:30 AM – 4:00 PM ET). Outside those hours the thread sleeps efficiently and auto-resumes when the market opens. Does not account for market holidays.
 
 **Start tracking:**
 ```
@@ -55,7 +59,8 @@ POST http://localhost:8000/track/AAPL
 {
   "status": "tracking",
   "ticker": "AAPL",
-  "interval_seconds": 10
+  "interval_seconds": 10,
+  "history_rows": 390
 }
 ```
 
