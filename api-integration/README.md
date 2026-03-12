@@ -6,6 +6,7 @@ A minimal FastAPI REST API that returns live stock data for any ticker symbol us
 
 ```bash
 cd api-integration
+cp .env.example .env   # then add your Finnhub API key
 pip install -r requirements.txt
 ```
 
@@ -88,6 +89,38 @@ GET http://localhost:8000/tracking
 - `POST /track/{ticker}` on an already-tracked ticker returns **409 Conflict**.
 - `POST /track/{ticker}` with an invalid ticker returns **404**.
 - `DELETE /track/{ticker}` on a non-tracked ticker returns **404**.
+
+### Financial News Tracking
+
+Track general financial news from Finnhub. Polls every 5 seconds and stores articles in `financial_news/financial news.csv`. Requires a `FINNHUB_API_KEY` env var (copy `.env.example` to `.env` and add your key).
+
+**Start tracking:**
+```
+POST http://localhost:8000/finnews
+```
+```json
+{
+  "status": "tracking",
+  "source": "finnhub",
+  "category": "general",
+  "interval_seconds": 5
+}
+```
+
+**Stop tracking:**
+```
+DELETE http://localhost:8000/finnews
+```
+```json
+{
+  "status": "stopped",
+  "source": "finnhub"
+}
+```
+
+- `POST /finnews` when already tracking returns **409 Conflict**.
+- `DELETE /finnews` when not tracking returns **404**.
+- Articles are deduplicated by ID — repeated polls won't create duplicate rows.
 
 ### Data persistence
 
