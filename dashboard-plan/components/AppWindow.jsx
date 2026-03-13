@@ -11,6 +11,7 @@ var SNAP_LAYOUTS = [
 
 window.AppWindow = function AppWindow({ win, theme, connectedEdges, onClose, onFocus, onDragEndWithSnap, getSnapTarget, onSnapUpdate, onResizeStart, onGroupDrag, onGroupDragEnd, registerWindowEl, onSnapToLayout }) {
   const windowRef = React.useRef(null);
+  const titlebarRef = React.useRef(null);
   const draggableRef = React.useRef(null);
 
   // Store callback props in refs so GSAP callbacks always call latest versions
@@ -29,13 +30,23 @@ window.AppWindow = function AppWindow({ win, theme, connectedEdges, onClose, onF
   // Snap layout popup state (null=closed, {left,top}=open at cursor)
   const [snapPopupPos, setSnapPopupPos] = React.useState(null);
 
-  function handleTitlebarContextMenu(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    var left = Math.min(e.clientX, window.innerWidth - 230);
-    var top = Math.min(e.clientY, window.innerHeight - 140);
-    setSnapPopupPos({ left: left, top: top });
-  }
+  // Attach contextmenu listener directly on titlebar with capture to beat GSAP Draggable on Windows
+  React.useEffect(function() {
+    var el = titlebarRef.current;
+    if (!el) return;
+    function handleContextMenu(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      var left = Math.min(e.clientX, window.innerWidth - 230);
+      var top = Math.min(e.clientY, window.innerHeight - 140);
+      setSnapPopupPos({ left: left, top: top });
+    }
+    el.addEventListener('contextmenu', handleContextMenu, { capture: true });
+    return function() {
+      el.removeEventListener('contextmenu', handleContextMenu, { capture: true });
+    };
+  }, []);
 
   React.useEffect(function() {
     if (!snapPopupPos) return;
@@ -158,8 +169,8 @@ window.AppWindow = function AppWindow({ win, theme, connectedEdges, onClose, onF
         ...borderStyle,
       }}
       onMouseDown={function() { onFocus(win.id); }}
-      onContextMenu={handleTitlebarContextMenu}>
-      <div className="win-titlebar"
+>
+      <div className="win-titlebar" ref={titlebarRef}
         style={{ background: theme.bg, borderBottomColor: theme.border }}>
         <span className="win-title" style={{ color: theme.iconColor }}>{win.id}</span>
         <div className="win-actions">
