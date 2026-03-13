@@ -282,8 +282,12 @@ window.App = function App() {
   }, []);
 
   /* ── Snap update (called during drag) — show ghost at snap destination ── */
-  var onSnapUpdate = React.useCallback(function(snap, draggedW, draggedH) {
-    if (snap) {
+  var onSnapUpdate = React.useCallback(function(snap, draggedW, draggedH, screenSnap) {
+    if (screenSnap) {
+      var vW = window.innerWidth, vH = window.innerHeight;
+      var indX = screenSnap === 'left' ? 0 : vW / 2;
+      setSnapIndicator({ x: indX, y: 0, width: vW / 2, height: vH, isScreen: true });
+    } else if (snap) {
       var pos = computeSnapPos(snap, { width: draggedW, height: draggedH });
       setSnapIndicator({ x: pos.x, y: pos.y, width: draggedW, height: draggedH });
     } else {
@@ -325,9 +329,30 @@ window.App = function App() {
   var onDragEndWithSnap = React.useCallback(function(draggedId, newX, newY) {
     setSnapIndicator(null);
 
+    var SCREEN_SNAP_ZONE = 40;
+    var vW = window.innerWidth, vH = window.innerHeight;
+
     setWindows(function(ws) {
       var dragged = ws.find(function(w) { return w.id === draggedId; });
       if (!dragged) return ws;
+
+      // Screen edge snap takes priority over window-to-window snap
+      var screenSnapSide = null;
+      if (newX < SCREEN_SNAP_ZONE) screenSnapSide = 'left';
+      else if (newX + dragged.width > vW - SCREEN_SNAP_ZONE) screenSnapSide = 'right';
+
+      if (screenSnapSide) {
+        var snapX = screenSnapSide === 'left' ? 0 : vW / 2;
+        var el = windowElsRef.current[draggedId];
+        if (el) {
+          AnimUtils.animateSnapMerge(el, snapX, 0, function() {
+            AnimUtils.animateSnapPulse(el);
+          });
+        }
+        return ws.map(function(w) {
+          return w.id === draggedId ? { ...w, x: snapX, y: 0, width: vW / 2, height: vH } : w;
+        });
+      }
 
       var snap = getSnapTarget(draggedId, newX, newY, dragged.width, dragged.height);
       if (!snap) {
@@ -335,10 +360,10 @@ window.App = function App() {
       }
 
       var snapPos = computeSnapPos(snap, dragged);
-      var el = windowElsRef.current[draggedId];
-      if (el) {
-        AnimUtils.animateSnapMerge(el, snapPos.x, snapPos.y, function() {
-          AnimUtils.animateSnapPulse(el);
+      var el2 = windowElsRef.current[draggedId];
+      if (el2) {
+        AnimUtils.animateSnapMerge(el2, snapPos.x, snapPos.y, function() {
+          AnimUtils.animateSnapPulse(el2);
           var targetEl = windowElsRef.current[snap.targetId];
           if (targetEl) AnimUtils.animateSnapPulse(targetEl);
         });
@@ -628,7 +653,7 @@ window.App = function App() {
 
       {/* Snap indicator overlay — ghost of dragged window at destination */}
       {snapIndicator && (
-        <div className="snap-indicator" style={{
+        <div className={'snap-indicator' + (snapIndicator.isScreen ? ' screen-snap' : '')} style={{
           left: snapIndicator.x, top: snapIndicator.y,
           width: snapIndicator.width, height: snapIndicator.height
         }}/>

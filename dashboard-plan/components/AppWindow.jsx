@@ -52,6 +52,14 @@ window.AppWindow = function AppWindow({ win, theme, connectedEdges, onClose, onF
         var el = windowRef.current;
         var w = winRef.current;
         var x = parseFloat(el.style.left), y = parseFloat(el.style.top);
+        var vW = window.innerWidth;
+
+        // Screen edge snap detection (ungrouped only)
+        var screenSnap = null;
+        if (!w.groupId) {
+          if (x < 40) screenSnap = 'left';
+          else if (x + w.width > vW - 40) screenSnap = 'right';
+        }
 
         if (w.groupId) {
           // Group drag — move siblings imperatively
@@ -59,10 +67,10 @@ window.AppWindow = function AppWindow({ win, theme, connectedEdges, onClose, onF
           callbacksRef.current.onGroupDrag(w.id, w.groupId, dx, dy);
           // Snap detection against external windows only
           var snap = callbacksRef.current.getSnapTarget(w.id, x, y, w.width, w.height, w.groupId);
-          callbacksRef.current.onSnapUpdate(snap, w.width, w.height);
+          callbacksRef.current.onSnapUpdate(snap, w.width, w.height, null);
         } else {
           var snap2 = callbacksRef.current.getSnapTarget(w.id, x, y, w.width, w.height);
-          callbacksRef.current.onSnapUpdate(snap2, w.width, w.height);
+          callbacksRef.current.onSnapUpdate(snap2, w.width, w.height, screenSnap);
         }
       },
       onDragEnd: function() {

@@ -446,6 +446,15 @@ body { font-family:'Segoe UI',system-ui,sans-serif; color:#1a1a1a; }
   transition: left 0.1s, top 0.1s, width 0.1s, height 0.1s;
 }
 
+/* Screen-edge half-snap variant */
+.snap-indicator.screen-snap {
+  border-radius: 12px;
+  border-style: solid;
+  border-color: rgba(74, 108, 247, 0.55);
+  background: rgba(74, 108, 247, 0.1);
+  transition: left 0.08s, top 0.08s, width 0.08s, height 0.08s;
+}
+
 /* ── MERGE SEAM (invisible hit area for double-click unmerge) ── */
 .merge-seam {
   position: absolute;
