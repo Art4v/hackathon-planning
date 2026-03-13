@@ -51,13 +51,15 @@ Experimenting with statistical and ML models for financial data.
 
 Skills practiced: NumPy/pandas data pipelines, statistical modelling, financial simulation.
 
-### `api-integration/` — Simple Stock Data REST API
-A minimal FastAPI REST API that returns live stock data for any ticker symbol.
+### `api-integration/` — Stock Data & Live Tracking REST API
+A FastAPI backend providing live stock data, continuous background tracking, and financial news ingestion.
 
-- **`main.py`** — Single GET endpoint (`/stock/{ticker}`) returning price, volume, and market cap as JSON
-- **yfinance** for free, real-time market data — no API key required
+- **`main.py`** — Endpoints for spot quotes (`/stock/{ticker}`), live tracking (`POST/DELETE /track/{ticker}`), and financial news (`POST/DELETE /finnews`)
+- **yfinance** for real-time market data (no API key required); **Finnhub** for financial news (API key via `.env`)
+- Background threads auto-backfill 24 hours of 1-minute history on tracker start; market-hours aware (Mon–Fri 9:30–16:00 ET)
+- Tracked data persisted to `data/{TICKER}.csv`; news to `financial_news/financial news.csv`
 
-Skills practiced: FastAPI routing, third-party API integration, JSON response design, error handling.
+Skills practiced: FastAPI routing, background threads, third-party API integration, CSV persistence, environment variable hygiene, error handling.
 
 ### `ui_planning/` — Dashboard UI Prototypes
 Interactive desktop-style dashboard demos for the Canary AI trading platform, built with React (CDN) and GSAP animations.
@@ -68,6 +70,15 @@ Interactive desktop-style dashboard demos for the Canary AI trading platform, bu
 - Uses GSAP Draggable for window drag, custom resize handlers, and CDN-loaded React with Babel standalone
 
 Skills practiced: GSAP animation library, React component architecture, drag-and-drop UI, modular file structure without build tools.
+
+### `prediction/optimizer/` — Efficient Frontier Portfolio Optimizer
+C++ program that computes optimal portfolio allocation across AAPL, TSLA, and BOBS using mean-variance optimization on the efficient frontier.
+
+- **`portfolio_optimizer.cpp`** — single-file optimizer: reads price CSVs, computes log returns, builds the efficient frontier via grid search, and outputs trade recommendations
+- **`Makefile`** — build with `g++ -std=c++17` and Eigen headers
+- Uses **Eigen** (header-only) for matrix math; supports `balanced`, `risk_averse`, and `risk_agg` strategies via `--risk_strat` CLI arg
+
+Skills practiced: C++17, linear algebra (Eigen), mean-variance portfolio theory, efficient frontier computation, CSV parsing, minimal JSON state management.
 
 ## Contributors
 
