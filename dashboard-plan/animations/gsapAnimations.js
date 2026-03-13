@@ -116,7 +116,12 @@ window.AnimUtils = {
 
   /* ── Lego merge snap ── */
   animateSnapMerge: function(el, snapX, snapY, onComplete) {
-    gsap.to(el, { left: snapX, top: snapY, duration: 0.3, ease: 'back.out(1.4)', onComplete: onComplete });
+    gsap.to(el, { left: snapX, top: snapY, duration: 0.22, ease: 'expo.out', onComplete: onComplete });
+  },
+
+  /* ── Window layout snap (position + size) ── */
+  animateWindowLayout: function(el, toX, toY, toW, toH, onComplete) {
+    gsap.to(el, { left: toX, top: toY, width: toW, height: toH, duration: 0.32, ease: 'expo.out', onComplete: onComplete });
   },
   animateSnapPulse: function(el) {
     gsap.fromTo(el, { boxShadow: '0 0 0 0px rgba(74,108,247,0.4)' },

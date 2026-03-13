@@ -332,34 +332,43 @@ window.App = function App() {
     var SCREEN_SNAP_ZONE = 40;
     var vW = window.innerWidth, vH = window.innerHeight;
 
-    setWindows(function(ws) {
-      var dragged = ws.find(function(w) { return w.id === draggedId; });
-      if (!dragged) return ws;
+    // Read dragged window outside setWindows so we can branch before calling setWindows
+    var dragged = windowsRef.current.find(function(w) { return w.id === draggedId; });
+    if (!dragged) return;
 
-      // Screen edge snap takes priority over window-to-window snap
-      var screenSnapSide = null;
-      if (newX < SCREEN_SNAP_ZONE) screenSnapSide = 'left';
-      else if (newX + dragged.width > vW - SCREEN_SNAP_ZONE) screenSnapSide = 'right';
+    // Screen edge snap takes priority
+    var screenSnapSide = null;
+    if (newX < SCREEN_SNAP_ZONE) screenSnapSide = 'left';
+    else if (newX + dragged.width > vW - SCREEN_SNAP_ZONE) screenSnapSide = 'right';
 
-      if (screenSnapSide) {
-        var snapX = screenSnapSide === 'left' ? 0 : vW / 2;
-        var el = windowElsRef.current[draggedId];
-        if (el) {
-          AnimUtils.animateSnapMerge(el, snapX, 0, function() {
-            AnimUtils.animateSnapPulse(el);
-          });
-        }
+    if (screenSnapSide) {
+      var snapX = screenSnapSide === 'left' ? 0 : vW / 2;
+      var el = windowElsRef.current[draggedId];
+      if (el) {
+        AnimUtils.animateWindowLayout(el, snapX, 0, vW / 2, vH, function() {
+          AnimUtils.animateSnapPulse(el);
+        });
+      }
+      setWindows(function(ws) {
         return ws.map(function(w) {
           return w.id === draggedId ? { ...w, x: snapX, y: 0, width: vW / 2, height: vH } : w;
         });
-      }
+      });
+      bringToFront(draggedId);
+      return;
+    }
 
-      var snap = getSnapTarget(draggedId, newX, newY, dragged.width, dragged.height);
+    // Window-to-window snap
+    setWindows(function(ws) {
+      var d = ws.find(function(w) { return w.id === draggedId; });
+      if (!d) return ws;
+
+      var snap = getSnapTarget(draggedId, newX, newY, d.width, d.height);
       if (!snap) {
         return ws.map(function(w) { return w.id === draggedId ? { ...w, x: newX, y: newY } : w; });
       }
 
-      var snapPos = computeSnapPos(snap, dragged);
+      var snapPos = computeSnapPos(snap, d);
       var el2 = windowElsRef.current[draggedId];
       if (el2) {
         AnimUtils.animateSnapMerge(el2, snapPos.x, snapPos.y, function() {
@@ -372,9 +381,30 @@ window.App = function App() {
       return mergeWindows(ws, draggedId, snap.targetId, snap.edge, snapPos.x, snapPos.y);
     });
 
-    // Bring merged group to front
     bringToFront(draggedId);
   }, [getSnapTarget, bringToFront]);
+
+  /* ── Snap to layout (from popup picker) ── */
+  var onSnapToLayout = React.useCallback(function(id, layout) {
+    var vW = window.innerWidth, vH = window.innerHeight;
+    var toX = Math.round(layout.x * vW);
+    var toY = Math.round(layout.y * vH);
+    var toW = Math.round(layout.w * vW);
+    var toH = Math.round(layout.h * vH);
+
+    var el = windowElsRef.current[id];
+    if (el) {
+      AnimUtils.animateWindowLayout(el, toX, toY, toW, toH, function() {
+        AnimUtils.animateSnapPulse(el);
+      });
+    }
+    setWindows(function(ws) {
+      return ws.map(function(w) {
+        return w.id === id ? { ...w, x: toX, y: toY, width: toW, height: toH } : w;
+      });
+    });
+    bringToFront(id);
+  }, [bringToFront]);
 
   /* ── Group drag (imperative DOM moves during drag) ── */
   var onGroupDrag = React.useCallback(function(draggedId, groupId, dx, dy) {
@@ -637,7 +667,8 @@ window.App = function App() {
             onResizeStart={startResize}
             onGroupDrag={onGroupDrag}
             onGroupDragEnd={onGroupDragEnd}
-            registerWindowEl={registerWindowEl}/>
+            registerWindowEl={registerWindowEl}
+            onSnapToLayout={onSnapToLayout}/>
         );
       })}
 

@@ -435,6 +435,75 @@ body { font-family:'Segoe UI',system-ui,sans-serif; color:#1a1a1a; }
 .pay-btn.buy-btn  { background:#d1fae5; color:#065f46; border-color:#6ee7b7; box-shadow:0 4px 0 #34d399; }
 .pay-btn.sell-btn { background:#fee2e2; color:#7f1d1d; border-color:#fca5a5; box-shadow:0 4px 0 #f87171; }
 
+/* ── WINDOW ACTIONS ROW ── */
+.win-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ── SNAP LAYOUT POPUP ── */
+.snap-layout-popup {
+  position: fixed;
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1.5px solid rgba(0,0,0,0.1);
+  border-radius: 14px;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  gap: 6px;
+  z-index: 99999;
+  box-shadow: 0 10px 36px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
+  pointer-events: auto;
+}
+.snap-layout-item {
+  cursor: pointer;
+  border-radius: 7px;
+  padding: 3px;
+  border: 2px solid transparent;
+  transition: border-color 0.1s, background 0.1s;
+}
+.snap-layout-item:hover {
+  border-color: rgba(74,108,247,0.55);
+  background: rgba(74,108,247,0.07);
+}
+.snap-layout-screen {
+  width: 46px;
+  height: 34px;
+  background: #dce6f5;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  border: 1.5px solid #c0cfe0;
+}
+.snap-layout-highlight {
+  position: absolute;
+  background: rgba(74,108,247,0.55);
+  border-radius: 2px;
+  transition: background 0.1s;
+}
+.snap-layout-item:hover .snap-layout-highlight {
+  background: rgba(74,108,247,0.8);
+}
+
+/* Night mode */
+.desktop.night .snap-layout-popup {
+  background: rgba(18,28,50,0.97);
+  border-color: rgba(255,255,255,0.12);
+  box-shadow: 0 10px 36px rgba(0,0,0,0.4);
+}
+.desktop.night .snap-layout-screen {
+  background: #1a2640;
+  border-color: #2a3a5a;
+}
+.desktop.night .snap-layout-highlight {
+  background: rgba(106,126,196,0.6);
+}
+.desktop.night .snap-layout-item:hover .snap-layout-highlight {
+  background: rgba(106,126,196,0.9);
+}
 /* ── SNAP INDICATOR ── */
 .snap-indicator {
   position: absolute;
