@@ -477,6 +477,20 @@ body { font-family:'Segoe UI',system-ui,sans-serif; color:#1a1a1a; }
 .desktop.night .dock-tagline { color: #556; }
 .desktop.night .dock-label { color: #667; }
 
+/* Dock buttons */
+.desktop.night .dock-btn { box-shadow: 0 5px 0 rgba(0,0,0,0.4) !important; }
+.desktop.night .dock-item:nth-child(1) .dock-btn { background: #3a3500 !important; border-color: #554a00 !important; }
+.desktop.night .dock-item:nth-child(1) .dock-btn iconify-icon { color: #d4c84a !important; }
+.desktop.night .dock-item:nth-child(2) .dock-btn { background: #162040 !important; border-color: #2a3a6a !important; }
+.desktop.night .dock-item:nth-child(2) .dock-btn iconify-icon { color: #6a7ec4 !important; }
+.desktop.night .dock-item:nth-child(3) .dock-btn { background: #0a2a1a !important; border-color: #165030 !important; }
+.desktop.night .dock-item:nth-child(3) .dock-btn iconify-icon { color: #4ade80 !important; }
+.desktop.night .dock-item:nth-child(4) .dock-btn { background: #1a1030 !important; border-color: #2a1a50 !important; }
+.desktop.night .dock-item:nth-child(4) .dock-btn iconify-icon { color: #a78bfa !important; }
+.desktop.night .dock-item:nth-child(5) .dock-btn { background: #2a0a1a !important; border-color: #4a1a30 !important; }
+.desktop.night .dock-item:nth-child(5) .dock-btn iconify-icon { color: #f472b6 !important; }
+.desktop.night .dock-dot { background: #d0d8e8 !important; }
+
 .night-toggle {
   position: absolute; top: 18px; right: 20px; z-index: 5;
   background: rgba(0,0,0,0.08); border: 2px solid rgba(0,0,0,0.12);
@@ -490,3 +504,98 @@ body { font-family:'Segoe UI',system-ui,sans-serif; color:#1a1a1a; }
   display: inline-block; width: 6px; height: 6px; border-radius: 50%;
   background: #ff9500; margin-left: 4px; vertical-align: middle;
 }
+
+/* ── NIGHT MODE — Window Content ── */
+
+/* Window frame */
+.desktop.night .app-window { background: #1e293b !important; border-color: rgba(255,255,255,0.1) !important; box-shadow: 0 16px 50px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2) !important; }
+.desktop.night .win-titlebar { background: #162040 !important; border-bottom-color: rgba(255,255,255,0.1) !important; }
+.desktop.night .win-title { color: #d0d8e8 !important; }
+.desktop.night .win-close { color: #8899aa !important; }
+.desktop.night .win-close:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.12); color: #d0d8e8; }
+.desktop.night .win-body { color: #d0d8e8; }
+.desktop.night .rh-se::after { border-right-color: rgba(255,255,255,0.2); border-bottom-color: rgba(255,255,255,0.2); }
+
+/* Chat */
+.desktop.night .chat-wrap { background: #1e293b; }
+.desktop.night .chat-header { background: #162040; border-bottom-color: rgba(255,255,255,0.1); }
+.desktop.night .chat-header-icon { background: #0f1a2e; border-color: #334; }
+.desktop.night .chat-header-name { color: #a8beff; }
+.desktop.night .chat-header-status { color: #6a7ec4; }
+.desktop.night .chat-name { color: #d0d8e8; }
+.desktop.night .chat-status { color: #4ade80; }
+.desktop.night .chat-avatar { background: #2a2a10; border-color: #554; }
+.desktop.night .msg.ai .msg-bubble { background: #0f1a2e; color: #d0d8e8; }
+.desktop.night .msg.user .msg-bubble { background: #1e3a6e; border-color: #334; color: #d0d8e8; }
+.desktop.night .chat-msg.ai .chat-bubble { background: #162040; color: #a8beff; }
+.desktop.night .chat-msg.user .chat-bubble { background: #3b52c4; color: #fff; }
+.desktop.night .msg-time { color: #556; }
+.desktop.night .chat-time { color: #556; }
+.desktop.night .chat-input-area { background: #1e293b; border-top-color: rgba(255,255,255,0.1); }
+.desktop.night .chat-input { background: #0f1a2e; border-color: rgba(255,255,255,0.1); color: #d0d8e8; }
+.desktop.night .chat-input::placeholder { color: #667; }
+.desktop.night .chat-input:focus { border-color: #6a7ec4; }
+.desktop.night .chat-send { background: #3b52c4; color: #d0d8e8; border-color: #2a3a8a; box-shadow: 0 3px 0 #1e2a6a; }
+
+/* Portfolio */
+.desktop.night .pf-banner { background: #2a2a10; border-bottom-color: #554; }
+.desktop.night .pf-val { color: #d0d8e8; }
+.desktop.night .pf-val span { color: #667; }
+.desktop.night .pf-lbl { color: #667; }
+.desktop.night .pf-chg { background: #0a2a1a; color: #4ade80; border-color: #165; }
+.desktop.night .pf-stat { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+.desktop.night .pf-stat-v { color: #d0d8e8; }
+.desktop.night .pf-stat-l { color: #667; }
+.desktop.night .bubble-card { background: #1e293b; border-color: rgba(255,255,255,0.1) !important; }
+.desktop.night .bubble-card-wrap { box-shadow: 0 5px 0 rgba(0,0,0,0.3) !important; }
+.desktop.night .card-header { background: #0f1a2e !important; border-bottom-color: rgba(255,255,255,0.1) !important; }
+.desktop.night .card-ticker { color: #d0d8e8 !important; }
+.desktop.night .card-company { color: #667 !important; }
+.desktop.night .card-price { color: #d0d8e8 !important; }
+.desktop.night .card-pill { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+.desktop.night .card-pill.up { color: #4ade80; }
+.desktop.night .card-pill.dn { color: #f87171; }
+.desktop.night .vol-pill { background: #0f1a2e; border-color: rgba(255,255,255,0.1); color: #8899aa; }
+.desktop.night .rpill { border-color: rgba(255,255,255,0.1); color: #667; }
+.desktop.night .rpill.ay { background: #2a2a10; color: #d4c84a; border-color: #554; }
+.desktop.night .rpill.ab { background: #162040; color: #6a7ec4; border-color: #334; }
+.desktop.night .rpill.ag { background: #0a2a1a; color: #4ade80; border-color: #165; }
+.desktop.night .rpill.ar { background: #2a0a0a; color: #f87171; border-color: #533; }
+
+/* Account */
+.desktop.night .acct-hero { background: linear-gradient(135deg, #0a2a1a, #0f3322); border-bottom-color: #165; }
+.desktop.night .acct-avatar { background: #0f1a2e; border-color: #165; box-shadow: 0 4px 0 #0a2a1a; }
+.desktop.night .acct-name { color: #d0d8e8; }
+.desktop.night .acct-email { color: #8899aa; }
+.desktop.night .acct-stat { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+.desktop.night .acct-stat-v { color: #d0d8e8; }
+.desktop.night .acct-stat-l { color: #667; }
+.desktop.night .acct-row { border-bottom-color: rgba(255,255,255,0.06); }
+.desktop.night .acct-row-label { color: #8899aa; }
+.desktop.night .acct-row-val { color: #d0d8e8; }
+
+/* Settings */
+.desktop.night .settings-title { color: #667; }
+.desktop.night .setting-row { border-bottom-color: rgba(255,255,255,0.06); }
+.desktop.night .setting-label { color: #d0d8e8; }
+.desktop.night .setting-sub { color: #667; }
+.desktop.night .toggle.off { background: #2a3344; border-color: #3a4455; }
+.desktop.night .toggle.on { background: #3b52c4; border-color: #2a3a8a; }
+
+/* Payment */
+.desktop.night .pay-tabs { border-bottom-color: rgba(255,255,255,0.1); }
+.desktop.night .pay-tab { color: #667; }
+.desktop.night .pay-tab.buy.active { color: #4ade80; border-color: #4ade80; }
+.desktop.night .pay-tab.sell.active { color: #f87171; border-color: #f87171; }
+.desktop.night .pay-field label { color: #667; }
+.desktop.night .pay-select, .desktop.night .pay-input { background: #0f1a2e; border-color: rgba(255,255,255,0.1); color: #d0d8e8; }
+.desktop.night .pay-select:focus, .desktop.night .pay-input:focus { border-color: #6a7ec4; }
+.desktop.night .pay-preview { background: #0f1a2e; border-color: rgba(255,255,255,0.1); }
+.desktop.night .pay-preview-label { color: #667; }
+.desktop.night .pay-preview-val { color: #d0d8e8; }
+.desktop.night .pay-btn.buy-btn { background: #0a2a1a; color: #4ade80; border-color: #165; box-shadow: 0 4px 0 #0a1a10; }
+.desktop.night .pay-btn.sell-btn { background: #2a0a0a; color: #f87171; border-color: #533; box-shadow: 0 4px 0 #1a0505; }
+
+/* Scrollbar */
+.desktop.night ::-webkit-scrollbar-thumb { background: #334; }
+.desktop.night ::-webkit-scrollbar-track { background: transparent; }

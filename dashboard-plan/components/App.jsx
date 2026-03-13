@@ -144,6 +144,37 @@ window.App = function App() {
           nH = oy + oh - nY;
           nH = Math.max(minH, nH);
         }
+
+        // Clamp resize to prevent overlap with grouped siblings
+        var resWin = windowsRef.current.find(function(w) { return w.id === id; });
+        if (resWin && resWin.groupId) {
+          var siblings = windowsRef.current.filter(function(w) {
+            return w.groupId === resWin.groupId && w.id !== id && w.open;
+          });
+          for (var si = 0; si < siblings.length; si++) {
+            var sib = siblings[si];
+            var vertOverlap = sib.y < nY + nH && sib.y + sib.height > nY;
+            var horizOverlap = sib.x < nX + nW && sib.x + sib.width > nX;
+
+            if (dir.includes('e') && vertOverlap && sib.x >= nX && sib.x < nX + nW) {
+              nW = Math.min(nW, sib.x - nX);
+            }
+            if (dir.includes('w') && vertOverlap && sib.x + sib.width <= ox + ow && sib.x + sib.width > nX) {
+              nX = Math.max(nX, sib.x + sib.width);
+              nW = ox + ow - nX;
+              nW = Math.max(minW, nW);
+            }
+            if (dir.includes('s') && horizOverlap && sib.y >= nY && sib.y < nY + nH) {
+              nH = Math.min(nH, sib.y - nY);
+            }
+            if (dir.includes('n') && horizOverlap && sib.y + sib.height <= oy + oh && sib.y + sib.height > nY) {
+              nY = Math.max(nY, sib.y + sib.height);
+              nH = oy + oh - nY;
+              nH = Math.max(minH, nH);
+            }
+          }
+        }
+
         setWindows(function(ws) {
           return ws.map(function(w) {
             return w.id === id ? { ...w, x: nX, y: nY, width: nW, height: nH } : w;
