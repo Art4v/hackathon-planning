@@ -1,14 +1,18 @@
 # Canary AI Dashboard — Rebuild Prompts for Claude Code
 
+> **⚠️ Frontend only:** Every prompt in this guide produces **client-side code only** — no backend, no server, no API keys. All data is mock/static. If a prompt mentions an API, it means a simulated fetch with fake data, never a real network call to an external service.
+
 > **How to use:** Open Claude Code in your **empty target repo**. Copy-paste each prompt in order. Verify the app works (`npm run dev`) before moving to the next prompt. Each prompt builds on the previous one.
 >
-> **What you're building:** A stock trading dashboard with an animated sky background, glassmorphic UI, and a portfolio view — designed to impress at a hackathon demo.
+> **What you're building:** A stock trading dashboard with an animated sky background, glassmorphic UI, and a portfolio view — designed to impress at a hackathon demo. Everything runs in the browser with no backend or external APIs.
 
 ---
 
 ## Prompt 1 — Project Scaffolding
 
 ```
+[Frontend only — no backend, no server, no external APIs.]
+
 Scaffold a React + Vite project in the current directory (not in a subfolder — scaffold at the repo root).
 
 Requirements:
@@ -38,6 +42,8 @@ Don't add any styling yet — we'll do that in the next step.
 ## Prompt 2 — Design System & Theme
 
 ```
+[Frontend only — no backend, no server, no external APIs.]
+
 Set up the design system and dark mode theme for a stock trading dashboard called "Canary AI". The visual style is "friendly fintech" — rounded glassmorphic cards, soft shadows, sky-themed background. Think playful and polished, not Bloomberg terminal.
 
 1. Create `src/styles/tokens.css` with CSS custom properties:
@@ -95,6 +101,8 @@ Set up the design system and dark mode theme for a stock trading dashboard calle
 ## Prompt 3 — Sky Background & Animations
 
 ```
+[Frontend only — no backend, no server, no external APIs.]
+
 Create the animated sky background. This is the first thing people see — it should look dreamy and polished.
 
 1. Create `src/utils/animations.js` with GSAP animation helpers:
@@ -149,6 +157,8 @@ Test: you should see clouds drifting across a blue sky. In night mode (force it 
 ## Prompt 4 — Dock Launcher
 
 ```
+[Frontend only — no backend, no server, no external APIs.]
+
 Create the central dock that sits at the bottom center of the screen. It's shaped like a cloud and contains app launcher icons.
 
 1. Create `src/data/dockItems.js` exporting a DOCK_ITEMS array:
@@ -218,6 +228,8 @@ Test: You should see the sky background with clouds, and a cloud-shaped dock at 
 ## Prompt 5 — Portfolio View (Star Feature)
 
 ```
+[Frontend only — no backend, no server, no external APIs. All stock data is mock/static.]
+
 Build the portfolio view — this is the main feature of the dashboard and needs to look premium.
 
 1. Create `src/data/stocks.js` exporting mock stock data:
@@ -302,6 +314,8 @@ Test: Temporarily render <PortfolioView /> directly in App.jsx to verify it look
 ## Prompt 6 — Window System
 
 ```
+[Frontend only — no backend, no server, no external APIs.]
+
 Create a window management system that opens app content in draggable windows.
 
 1. Create `src/features/window/AppWindow.jsx`:
@@ -368,6 +382,8 @@ Test the full flow:
 ## Prompt 7 — Polish & Demo Prep
 
 ```
+[Frontend only — no backend, no server, no external APIs.]
+
 Final polish pass to make this hackathon-ready. Go through each of these and make the app feel premium:
 
 1. ENTRANCE ANIMATION:
@@ -472,16 +488,21 @@ Add expandable corner launchers at bottom-left and bottom-right of the screen.
 - Staggered animation on menu open (each icon slides in with 50ms delay)
 ```
 
-### Integrate Live Stock Data
+### Simulate Live Stock Data (Frontend Only — No Real API)
 ```
-Replace mock stock data with live data from the Finnhub API.
-- Create src/services/stockService.js with functions to fetch quotes and sparkline data
-- Use the free Finnhub API (websocket for real-time, REST for historical)
-- Create a .env.example with VITE_FINNHUB_API_KEY placeholder
-- Add a useStocks() hook that fetches on mount and refreshes every 30s
-- Update PortfolioView to use the hook instead of static data
-- Show a loading skeleton while data is fetching
-- Handle API errors gracefully with a retry mechanism
+Replace the static STOCKS array with a simulated "live" feed — still 100% frontend, no API keys, no backend.
+
+- Create src/services/stockService.js:
+  - Export a generateRandomWalk(baseData, steps) function that takes existing sparkline data and appends small random deltas (±0.3%) to simulate price movement
+  - Export a simulateQuoteFetch(ticker) async function that wraps the mock data in a Promise with a random 200-600ms delay (to mimic network latency)
+- Create src/data/stockHistory.json with 30-day mock sparkline arrays for AAPL, TSLA, NVDA, MSFT (just extend the existing 12-point arrays to 30 points)
+- Add a useStocks() hook:
+  - On mount, call simulateQuoteFetch for each ticker (shows loading skeleton)
+  - Every 15s, run generateRandomWalk to update prices and sparkline data in state
+  - Return { stocks, portfolio, isLoading }
+- Update PortfolioView to use useStocks() instead of importing STOCKS directly
+- Show a simple loading skeleton (pulsing gray rectangles) while "fetching"
+- No .env file needed — everything is self-contained in the browser
 ```
 
 ---
