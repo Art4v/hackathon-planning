@@ -15,6 +15,9 @@ from zoneinfo import ZoneInfo
 # Load environment variables from .env (e.g., FINNHUB_API_KEY)
 load_dotenv()
 
+# Number of hours to rewind the clock for testing. 0 = live (default).
+_REWIND_HOURS: float = float(os.getenv("TIME_REWIND_HOURS", "0"))
+
 # Create the FastAPI application instance
 app = FastAPI(title="Stock Data API")
 
@@ -37,9 +40,17 @@ news_tracker: dict[str, threading.Event] = {}
 seen_news_ids: set[int] = set()
 
 
+def get_effective_now(tz=None) -> datetime:
+    """Return current UTC time offset back by _REWIND_HOURS.
+    Pass tz= to get the result in a specific timezone (e.g. ZoneInfo("America/New_York")).
+    When _REWIND_HOURS == 0 this is exactly datetime.now(tz)."""
+    now = datetime.now(tz=timezone.utc) - timedelta(hours=_REWIND_HOURS)
+    return now.astimezone(tz) if tz is not None else now
+
+
 def is_market_open() -> bool:
     """Check if US stock market is currently open (Mon-Fri 9:30 AM - 4:00 PM ET)."""
-    now = datetime.now(ZoneInfo("America/New_York"))
+    now = get_effective_now(tz=ZoneInfo("America/New_York"))
     # Weekend check
     if now.weekday() >= 5:
         return False
@@ -53,7 +64,11 @@ def backfill_history(ticker: str) -> int:
     """Fetch last 24h of 1-minute intraday data and append to CSV. Returns rows written."""
     stock = yf.Ticker(ticker.upper())
     info = stock.info
-    history = stock.history(period="2d", interval="1m")
+    # Use explicit start/end so the window is anchored to the rewound time.
+    # When _REWIND_HOURS == 0, end_dt == now and this reproduces period="2d" exactly.
+    end_dt   = get_effective_now(tz=timezone.utc)
+    start_dt = end_dt - timedelta(days=2)
+    history  = stock.history(start=start_dt, end=end_dt, interval="1m")
 
     if history.empty:
         return 0
@@ -97,22 +112,41 @@ def fetch_and_save(ticker: str) -> dict | None:
     Returns the response dict, or None if the ticker is invalid.
     """
     stock = yf.Ticker(ticker.upper())
-    info = stock.info
 
-    if info.get("currentPrice") is None and info.get("regularMarketPrice") is None:
-        return None
+    if _REWIND_HOURS == 0:
+        # -- live path --
+        info = stock.info
+        if info.get("currentPrice") is None and info.get("regularMarketPrice") is None:
+            return None
+        response = {
+            "ticker": ticker.upper(),
+            "name": info.get("shortName", "N/A"),
+            "current_price": info.get("currentPrice") or info.get("regularMarketPrice"),
+            "day_high": info.get("dayHigh", None),
+            "day_low": info.get("dayLow", None),
+            "volume": info.get("volume", None),
+            "market_cap": info.get("marketCap", None),
+        }
+    else:
+        # -- rewind path: get price from history at the rewound moment --
+        end_dt   = get_effective_now(tz=timezone.utc)
+        start_dt = end_dt - timedelta(minutes=5)
+        hist = stock.history(start=start_dt, end=end_dt, interval="1m")
+        if hist.empty:
+            return None
+        row  = hist.iloc[-1]   # last bar in the window = closest to rewound time
+        info = stock.info      # metadata only (name, market cap)
+        response = {
+            "ticker": ticker.upper(),
+            "name": info.get("shortName", "N/A"),
+            "current_price": float(row["Close"]),
+            "day_high": float(row["High"]),
+            "day_low": float(row["Low"]),
+            "volume": int(row["Volume"]),
+            "market_cap": info.get("marketCap", None),
+        }
 
-    response = {
-        "ticker": ticker.upper(),
-        "name": info.get("shortName", "N/A"),
-        "current_price": info.get("currentPrice") or info.get("regularMarketPrice"),
-        "day_high": info.get("dayHigh", None),
-        "day_low": info.get("dayLow", None),
-        "volume": info.get("volume", None),
-        "market_cap": info.get("marketCap", None),
-    }
-
-    entry = {"timestamp": datetime.now().isoformat(), **response}
+    entry = {"timestamp": get_effective_now().isoformat(), **response}
     os.makedirs("data/tracking", exist_ok=True)
     filepath = f"data/tracking/{ticker.upper()}.csv"
     headers = list(entry.keys())
@@ -132,7 +166,7 @@ def tracking_loop(ticker: str, stop_event: threading.Event):
     while not stop_event.is_set():
         if is_market_open():
             fetch_and_save(ticker)
-            stop_event.wait(10)       # poll every 10s during market hours
+            stop_event.wait(60)       # poll every 60s during market hours
         else:
             stop_event.wait(60)       # check once per minute when market is closed
 
@@ -187,7 +221,7 @@ def start_tracking(ticker: str):
     return {
         "status": "tracking",
         "ticker": ticker_upper,
-        "interval_seconds": 10,
+        "interval_seconds": 60,
         "history_rows": history_rows,
     }
 
@@ -269,8 +303,9 @@ def backfill_news() -> int:
     API directly using the client's session and API key.
     Returns the number of rows written.
     """
-    today = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
-    two_days_ago = (datetime.now(tz=timezone.utc) - timedelta(days=2)).strftime("%Y-%m-%d")
+    effective_now = get_effective_now(tz=timezone.utc)
+    today        = effective_now.strftime("%Y-%m-%d")
+    two_days_ago = (effective_now - timedelta(days=2)).strftime("%Y-%m-%d")
 
     # Hit the Finnhub /news endpoint with from/to date filters
     resp = finnhub_client._session.get(
@@ -291,7 +326,16 @@ def fetch_and_save_news() -> int:
     Fetch latest general market news from Finnhub and append new articles to CSV.
     Deduplicates via _write_news_articles. Returns the number of new rows written.
     """
-    articles = finnhub_client.general_news('general')
+    if _REWIND_HOURS == 0:
+        articles = finnhub_client.general_news('general')
+    else:
+        rewound_date = get_effective_now(tz=timezone.utc).strftime("%Y-%m-%d")
+        resp = finnhub_client._session.get(
+            f"{finnhub_client.API_URL}/news",
+            params={"category": "general", "from": rewound_date,
+                    "to": rewound_date, "token": finnhub_client.api_key},
+        )
+        articles = resp.json() if resp.status_code == 200 else []
     return _write_news_articles(articles)
 
 
