@@ -274,6 +274,25 @@ window.App = function App() {
     });
   }
 
+  /* ── Toggle window (open if closed, close if open) ── */
+  var toggleWindow = React.useCallback(function(id) {
+    var win = windowsRef.current.find(function(w) { return w.id === id; });
+    if (win && win.open) {
+      closeWindow(id);
+    } else {
+      openWindow(id);
+    }
+  }, [openWindow, closeWindow]);
+
+  /* ── Clear all windows ── */
+  var clearAllWindows = React.useCallback(function() {
+    setWindows(function(ws) {
+      return ws.map(function(w) {
+        return { ...w, open: false, groupId: null, connections: [] };
+      });
+    });
+  }, []);
+
   /* ── Position sync (fallback for normal drag) ── */
   var onPositionSync = React.useCallback(function(id, newX, newY) {
     setWindows(function(ws) {
@@ -649,6 +668,10 @@ window.App = function App() {
 
       {/* Center dock */}
       <Dock windows={windows} openWindow={openWindow} isNight={isNight}/>
+
+      {/* Corner quick-launch buttons */}
+      <CornerLauncher position="left" dockItems={DOCK_ITEMS} windows={windows} onToggle={toggleWindow} onClearAll={clearAllWindows}/>
+      <CornerLauncher position="right" dockItems={DOCK_ITEMS} windows={windows} onToggle={toggleWindow} onClearAll={clearAllWindows}/>
 
       {/* Windows */}
       {windows.filter(function(w) { return w.open; }).map(function(win) {

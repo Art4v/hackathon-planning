@@ -157,9 +157,9 @@ window.AppWindow = function AppWindow({ win, theme, connectedEdges, onClose, onF
         zIndex: win.z,
         ...borderStyle,
       }}
-      onMouseDown={function() { onFocus(win.id); }}>
+      onMouseDown={function() { onFocus(win.id); }}
+      onContextMenu={handleTitlebarContextMenu}>
       <div className="win-titlebar"
-        onContextMenu={handleTitlebarContextMenu}
         style={{ background: theme.bg, borderBottomColor: theme.border }}>
         <span className="win-title" style={{ color: theme.iconColor }}>{win.id}</span>
         <div className="win-actions">
