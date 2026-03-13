@@ -1,164 +1,346 @@
-from contextlib import asynccontextmanager
-from pathlib import Path
+# main.py — Simple Stock Data REST API
+# A minimal FastAPI app that returns live stock data for any ticker symbol
+# and tracks financial news from Finnhub.
 
-import pandas as pd
-import yfinance as yf
-from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
+import yfinance as yf
+import finnhub
+from dotenv import load_dotenv
+import csv
+import os
+import threading
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
-# ---------------------------------------------------------------------------
-# Globals
-# ---------------------------------------------------------------------------
-DATA_DIR = Path(__file__).parent / "data"
-tracked_tickers: set[str] = set()
-scheduler = BackgroundScheduler()
+# Load environment variables from .env (e.g., FINNHUB_API_KEY)
+load_dotenv()
 
-# ---------------------------------------------------------------------------
-# Pydantic models
-# ---------------------------------------------------------------------------
+# Create the FastAPI application instance
+app = FastAPI(title="Stock Data API")
 
-class StockRecord(BaseModel):
-    datetime: str
-    open: float
-    high: float
-    low: float
-    close: float
-    volume: float
+# Initialize Finnhub client using API key from environment
+finnhub_client = finnhub.Client(api_key=os.getenv("FINNHUB_API_KEY", ""))
 
+# Clear old CSV data on startup so each run starts fresh
+import shutil
+if os.path.exists("data"):
+    shutil.rmtree("data")
 
-class TickerResponse(BaseModel):
-    ticker: str
-    records: list[StockRecord]
+# Dict mapping uppercase ticker -> threading.Event (set = stop signal)
+active_trackers: dict[str, threading.Event] = {}
 
+# News tracker dict — at most one key ("finnews") -> threading.Event
+news_tracker: dict[str, threading.Event] = {}
 
-class MessageResponse(BaseModel):
-    message: str
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def csv_path(ticker: str) -> Path:
-    return DATA_DIR / f"{ticker}.csv"
+# In-memory set of Finnhub article IDs we've already written to CSV,
+# used to deduplicate across polling cycles (news doesn't change every 5s)
+seen_news_ids: set[int] = set()
 
 
-def fetch_ticker_data(ticker: str) -> pd.DataFrame:
-    """Download live 1-minute OHLCV data for *ticker* from Yahoo Finance."""
-    df = yf.download(ticker, period="1d", interval="1m", progress=False)
-    if df.empty:
-        return df
-    # yfinance ≥0.2.31 may return multi-level columns for single tickers
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = df.columns.get_level_values(0)
-    df = df[["Open", "High", "Low", "Close", "Volume"]].copy()
-    df.index.name = "Datetime"
-    return df
+def is_market_open() -> bool:
+    """Check if US stock market is currently open (Mon-Fri 9:30 AM - 4:00 PM ET)."""
+    now = datetime.now(ZoneInfo("America/New_York"))
+    # Weekend check
+    if now.weekday() >= 5:
+        return False
+    # Time check: 9:30 AM to 4:00 PM ET
+    market_open = now.replace(hour=9, minute=30, second=0, microsecond=0)
+    market_close = now.replace(hour=16, minute=0, second=0, microsecond=0)
+    return market_open <= now < market_close
 
 
-def save_data(ticker: str, df: pd.DataFrame) -> None:
-    """Write *df* to CSV, appending only new rows if the file already exists."""
-    path = csv_path(ticker)
-    if path.exists():
-        existing = pd.read_csv(path, parse_dates=["Datetime"])
-        last_date = existing["Datetime"].max()
-        new_rows = df[df.index > last_date]
-        if new_rows.empty:
-            return
-        new_rows.to_csv(path, mode="a", header=False)
-    else:
-        df.to_csv(path)
+def backfill_history(ticker: str) -> int:
+    """Fetch last 24h of 1-minute intraday data and append to CSV. Returns rows written."""
+    stock = yf.Ticker(ticker.upper())
+    info = stock.info
+    history = stock.history(period="2d", interval="1m")
 
+    if history.empty:
+        return 0
 
-def update_all_tickers() -> None:
-    """Scheduler callback — refresh data for every tracked ticker."""
-    for ticker in list(tracked_tickers):
-        try:
-            df = fetch_ticker_data(ticker)
-            if not df.empty:
-                save_data(ticker, df)
-        except Exception as exc:
-            print(f"[scheduler] Error updating {ticker}: {exc}")
+    name = info.get("shortName", "N/A")
+    market_cap = info.get("marketCap", None)
 
-# ---------------------------------------------------------------------------
-# Lifespan (startup / shutdown)
-# ---------------------------------------------------------------------------
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup
-    DATA_DIR.mkdir(exist_ok=True)
-    # Resume tracking from any CSVs already on disk
-    for f in DATA_DIR.glob("*.csv"):
-        tracked_tickers.add(f.stem.upper())
-    scheduler.add_job(update_all_tickers, "interval", seconds=60)
-    scheduler.start()
-    yield
-    # Shutdown
-    scheduler.shutdown(wait=False)
-
-# ---------------------------------------------------------------------------
-# App
-# ---------------------------------------------------------------------------
-app = FastAPI(title="Stock Data Tracker", lifespan=lifespan)
-
-
-@app.post("/track/{ticker}", response_model=MessageResponse)
-def track_ticker(ticker: str):
-    ticker = ticker.upper()
-    if ticker in tracked_tickers:
-        return MessageResponse(message=f"{ticker} is already being tracked.")
-
-    df = fetch_ticker_data(ticker)
-    if df.empty:
-        raise HTTPException(status_code=400, detail=f"Invalid ticker: {ticker}")
-
-    save_data(ticker, df)
-    tracked_tickers.add(ticker)
-    return MessageResponse(message=f"Now tracking {ticker}. {len(df)} rows saved.")
-
-
-@app.delete("/track/{ticker}", response_model=MessageResponse)
-def untrack_ticker(ticker: str):
-    ticker = ticker.upper()
-    if ticker not in tracked_tickers:
-        raise HTTPException(status_code=404, detail=f"{ticker} is not being tracked.")
-    tracked_tickers.discard(ticker)
-    return MessageResponse(message=f"Stopped tracking {ticker}. CSV data retained.")
-
-
-@app.get("/data/{ticker}", response_model=TickerResponse)
-def get_ticker_data(ticker: str):
-    ticker = ticker.upper()
-    path = csv_path(ticker)
-    if not path.exists():
-        raise HTTPException(status_code=404, detail=f"No data found for {ticker}.")
-
-    df = pd.read_csv(path)
-    records = [
-        StockRecord(
-            datetime=str(row["Datetime"]),
-            open=row["Open"],
-            high=row["High"],
-            low=row["Low"],
-            close=row["Close"],
-            volume=row["Volume"],
-        )
-        for _, row in df.iterrows()
+    os.makedirs("data/tracking", exist_ok=True)
+    filepath = f"data/tracking/{ticker.upper()}.csv"
+    headers = [
+        "timestamp", "ticker", "name", "current_price",
+        "day_high", "day_low", "volume", "market_cap",
     ]
-    return TickerResponse(ticker=ticker, records=records)
+    file_exists = os.path.exists(filepath)
+
+    rows_written = 0
+    with open(filepath, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=headers)
+        if not file_exists:
+            writer.writeheader()
+        for ts, row in history.iterrows():
+            entry = {
+                "timestamp": ts.isoformat(),
+                "ticker": ticker.upper(),
+                "name": name,
+                "current_price": row["Close"],
+                "day_high": row["High"],
+                "day_low": row["Low"],
+                "volume": int(row["Volume"]),
+                "market_cap": market_cap,
+            }
+            writer.writerow(entry)
+            rows_written += 1
+
+    return rows_written
 
 
-@app.get("/data/{ticker}/csv")
-def get_ticker_csv(ticker: str):
-    ticker = ticker.upper()
-    path = csv_path(ticker)
-    if not path.exists():
-        raise HTTPException(status_code=404, detail=f"No CSV found for {ticker}.")
-    return FileResponse(path, media_type="text/csv", filename=f"{ticker}.csv")
+def fetch_and_save(ticker: str) -> dict | None:
+    """
+    Fetch live stock data for a ticker and append it to a CSV file.
+    Returns the response dict, or None if the ticker is invalid.
+    """
+    stock = yf.Ticker(ticker.upper())
+    info = stock.info
+
+    if info.get("currentPrice") is None and info.get("regularMarketPrice") is None:
+        return None
+
+    response = {
+        "ticker": ticker.upper(),
+        "name": info.get("shortName", "N/A"),
+        "current_price": info.get("currentPrice") or info.get("regularMarketPrice"),
+        "day_high": info.get("dayHigh", None),
+        "day_low": info.get("dayLow", None),
+        "volume": info.get("volume", None),
+        "market_cap": info.get("marketCap", None),
+    }
+
+    entry = {"timestamp": datetime.now().isoformat(), **response}
+    os.makedirs("data/tracking", exist_ok=True)
+    filepath = f"data/tracking/{ticker.upper()}.csv"
+    headers = list(entry.keys())
+    file_exists = os.path.exists(filepath)
+
+    with open(filepath, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=headers)
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow(entry)
+
+    return response
 
 
-@app.get("/tracked")
-def list_tracked():
-    return sorted(tracked_tickers)
+def tracking_loop(ticker: str, stop_event: threading.Event):
+    """Background loop that fetches stock data every 10s during market hours."""
+    while not stop_event.is_set():
+        if is_market_open():
+            fetch_and_save(ticker)
+            stop_event.wait(10)       # poll every 10s during market hours
+        else:
+            stop_event.wait(60)       # check once per minute when market is closed
+
+# ---------------------------------------------------------------------------
+# Stock Price Tracking (yfinance)
+# ---------------------------------------------------------------------------
+
+@app.get("/stock/{ticker}")
+def get_stock(ticker: str):
+    """
+    Fetch live stock data for a given ticker symbol.
+    Returns key metrics like price, day range, volume, and market cap.
+    """
+    result = fetch_and_save(ticker)
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Ticker '{ticker.upper()}' not found or has no market data.",
+        )
+    return result
+
+
+@app.post("/track/{ticker}")
+def start_tracking(ticker: str):
+    """Start continuous background tracking for a ticker (polls every 10s)."""
+    ticker_upper = ticker.upper()
+
+    if ticker_upper in active_trackers:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Already tracking '{ticker_upper}'.",
+        )
+
+    # Validate the ticker by fetching once
+    result = fetch_and_save(ticker)
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Ticker '{ticker_upper}' not found or has no market data.",
+        )
+
+    # Seed CSV with last 24h of intraday data
+    history_rows = backfill_history(ticker_upper)
+
+    stop_event = threading.Event()
+    active_trackers[ticker_upper] = stop_event
+    thread = threading.Thread(
+        target=tracking_loop, args=(ticker_upper, stop_event), daemon=True
+    )
+    thread.start()
+
+    return {
+        "status": "tracking",
+        "ticker": ticker_upper,
+        "interval_seconds": 10,
+        "history_rows": history_rows,
+    }
+
+
+@app.delete("/track/{ticker}")
+def stop_tracking(ticker: str):
+    """Stop continuous background tracking for a ticker."""
+    ticker_upper = ticker.upper()
+
+    if ticker_upper not in active_trackers:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Not currently tracking '{ticker_upper}'.",
+        )
+
+    active_trackers[ticker_upper].set()
+    del active_trackers[ticker_upper]
+
+    return {"status": "stopped", "ticker": ticker_upper}
+
+
+@app.get("/tracking")
+def list_tracking():
+    """Return all tickers currently being tracked."""
+    return {"tracking": list(active_trackers.keys())}
+
+
+# ---------------------------------------------------------------------------
+# Financial News Tracking (Finnhub)
+# ---------------------------------------------------------------------------
+
+
+def _write_news_articles(articles: list) -> int:
+    """
+    Write a list of Finnhub news articles to CSV, deduplicating by article ID.
+    Shared by both backfill_news() and fetch_and_save_news().
+    Returns the number of new rows written.
+    """
+    os.makedirs("data/financial_news", exist_ok=True)
+    filepath = "data/financial_news/financial news.csv"
+    headers = ["timestamp", "headline", "source", "summary", "url", "category", "related"]
+    file_exists = os.path.exists(filepath)
+
+    rows_written = 0
+    with open(filepath, "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=headers)
+        if not file_exists:
+            writer.writeheader()
+
+        for article in articles:
+            article_id = article.get("id")
+            # Skip articles we've already saved
+            if article_id in seen_news_ids:
+                continue
+            seen_news_ids.add(article_id)
+
+            # Convert unix timestamp to ISO format
+            unix_ts = article.get("datetime", 0)
+            iso_ts = datetime.fromtimestamp(unix_ts, tz=timezone.utc).isoformat()
+
+            writer.writerow({
+                "timestamp": iso_ts,
+                "headline": article.get("headline", ""),
+                "source": article.get("source", ""),
+                "summary": article.get("summary", ""),
+                "url": article.get("url", ""),
+                "category": article.get("category", ""),
+                "related": article.get("related", ""),
+            })
+            rows_written += 1
+
+    return rows_written
+
+
+def backfill_news() -> int:
+    """
+    Fetch the last 2 days of general news from Finnhub and write to CSV.
+    The finnhub-python library doesn't expose date params, so we call the
+    API directly using the client's session and API key.
+    Returns the number of rows written.
+    """
+    today = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
+    two_days_ago = (datetime.now(tz=timezone.utc) - timedelta(days=2)).strftime("%Y-%m-%d")
+
+    # Hit the Finnhub /news endpoint with from/to date filters
+    resp = finnhub_client._session.get(
+        f"{finnhub_client.API_URL}/news",
+        params={
+            "category": "general",
+            "from": two_days_ago,
+            "to": today,
+            "token": finnhub_client.api_key,
+        },
+    )
+    articles = resp.json() if resp.status_code == 200 else []
+    return _write_news_articles(articles)
+
+
+def fetch_and_save_news() -> int:
+    """
+    Fetch latest general market news from Finnhub and append new articles to CSV.
+    Deduplicates via _write_news_articles. Returns the number of new rows written.
+    """
+    articles = finnhub_client.general_news('general')
+    return _write_news_articles(articles)
+
+
+def news_tracking_loop(stop_event: threading.Event):
+    """Background loop that fetches financial news every 5 seconds until stopped."""
+    while not stop_event.is_set():
+        fetch_and_save_news()
+        stop_event.wait(5)  # poll every 5 seconds
+
+
+@app.post("/finnews")
+def start_news_tracking():
+    """Start continuous background tracking of general financial news from Finnhub."""
+    if "finnews" in news_tracker:
+        raise HTTPException(
+            status_code=409,
+            detail="Already tracking financial news.",
+        )
+
+    # Seed the CSV with the last 2 days of news before starting live polling
+    backfill_rows = backfill_news()
+
+    stop_event = threading.Event()
+    news_tracker["finnews"] = stop_event
+    thread = threading.Thread(
+        target=news_tracking_loop, args=(stop_event,), daemon=True
+    )
+    thread.start()
+
+    return {
+        "status": "tracking",
+        "source": "finnhub",
+        "category": "general",
+        "interval_seconds": 5,
+        "backfill_rows": backfill_rows,
+    }
+
+
+@app.delete("/finnews")
+def stop_news_tracking():
+    """Stop the financial news tracking background thread."""
+    if "finnews" not in news_tracker:
+        raise HTTPException(
+            status_code=404,
+            detail="Not currently tracking financial news.",
+        )
+
+    # Signal the background thread to stop and clean up
+    news_tracker["finnews"].set()
+    del news_tracker["finnews"]
+
+    return {"status": "stopped", "source": "finnhub"}

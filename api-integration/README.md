@@ -1,47 +1,137 @@
-# Stock Data Tracker API
+# Stock Data API
 
-A FastAPI REST API that tracks stock tickers, fetches daily OHLCV data from Yahoo Finance, stores it in CSVs, and auto-refreshes every 60 seconds.
+A minimal FastAPI REST API that returns live stock data for any ticker symbol using yfinance.
 
 ## Setup
 
 ```bash
 cd api-integration
+cp .env.example .env   # then add your Finnhub API key
 pip install -r requirements.txt
+```
+
+## Run
+
+```bash
 uvicorn main:app --reload
 ```
 
-The API runs at `http://127.0.0.1:8000`. Interactive docs are available at `/docs`.
+The server starts at `http://localhost:8000`.
 
-## Endpoints
+## Usage
 
-### Track a ticker
-```bash
-curl -X POST http://127.0.0.1:8000/track/AAPL
+### Get stock data
+
+```
+GET /stock/{ticker}
 ```
 
-### Stop tracking a ticker
-```bash
-curl -X DELETE http://127.0.0.1:8000/track/AAPL
+**Example request:**
+```
+GET http://localhost:8000/stock/AAPL
 ```
 
-### Get data as JSON
-```bash
-curl http://127.0.0.1:8000/data/AAPL
+**Example response:**
+```json
+{
+  "ticker": "AAPL",
+  "name": "Apple Inc.",
+  "current_price": 178.72,
+  "day_high": 180.12,
+  "day_low": 177.43,
+  "volume": 52340000,
+  "market_cap": 2780000000000
+}
 ```
 
-### Download CSV
-```bash
-curl -O http://127.0.0.1:8000/data/AAPL/csv
+### Live Tracking
+
+Start, stop, and list continuous background tracking for any ticker.
+
+When tracking starts, the API automatically **backfills the last 24 hours** of 1-minute intraday data into the CSV so you have immediate history. After that, live polling begins.
+
+**Market-hours awareness:** The tracker only polls during US market hours (Mon–Fri, 9:30 AM – 4:00 PM ET). Outside those hours the thread sleeps efficiently and auto-resumes when the market opens. Does not account for market holidays.
+
+**Start tracking:**
+```
+POST http://localhost:8000/track/AAPL
+```
+```json
+{
+  "status": "tracking",
+  "ticker": "AAPL",
+  "interval_seconds": 10,
+  "history_rows": 390
+}
 ```
 
-### List tracked tickers
-```bash
-curl http://127.0.0.1:8000/tracked
+**Stop tracking:**
+```
+DELETE http://localhost:8000/track/AAPL
+```
+```json
+{
+  "status": "stopped",
+  "ticker": "AAPL"
+}
 ```
 
-## How It Works
+**List tracked tickers:**
+```
+GET http://localhost:8000/tracking
+```
+```json
+{
+  "tracking": ["AAPL", "TSLA"]
+}
+```
 
-- **POST /track/{ticker}** validates the ticker against Yahoo Finance, downloads full daily history, saves to `data/{TICKER}.csv`, and adds it to the tracked set.
-- **APScheduler** runs a background job every 60 seconds that appends any new daily rows to each tracked ticker's CSV.
-- **DELETE /track/{ticker}** stops auto-refreshing but keeps the CSV on disk.
-- Data persists across restarts — on startup the API resumes tracking from any CSVs in `data/`.
+- `POST /track/{ticker}` on an already-tracked ticker returns **409 Conflict**.
+- `POST /track/{ticker}` with an invalid ticker returns **404**.
+- `DELETE /track/{ticker}` on a non-tracked ticker returns **404**.
+
+### Financial News Tracking
+
+Track general financial news from Finnhub. Polls every 5 seconds and stores articles in `financial_news/financial news.csv`. Requires a `FINNHUB_API_KEY` env var (copy `.env.example` to `.env` and add your key).
+
+**Start tracking:**
+```
+POST http://localhost:8000/finnews
+```
+```json
+{
+  "status": "tracking",
+  "source": "finnhub",
+  "category": "general",
+  "interval_seconds": 5
+}
+```
+
+**Stop tracking:**
+```
+DELETE http://localhost:8000/finnews
+```
+```json
+{
+  "status": "stopped",
+  "source": "finnhub"
+}
+```
+
+- `POST /finnews` when already tracking returns **409 Conflict**.
+- `DELETE /finnews` when not tracking returns **404**.
+- Articles are deduplicated by ID — repeated polls won't create duplicate rows.
+
+### Data persistence
+
+Each successful request automatically saves the fetched data to `data/{TICKER}.csv`. Each attribute is a column heading, and repeated requests append new rows to the file. The `data/` directory is created automatically on the first request.
+
+**Invalid ticker → 404:**
+```
+GET http://localhost:8000/stock/INVALIDXYZ
+```
+```json
+{
+  "detail": "Ticker 'INVALIDXYZ' not found or has no market data."
+}
+```
