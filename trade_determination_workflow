@@ -1,0 +1,15 @@
+--Workflow--
+
+Minute starts
+
+Do necessary calculations to find parameters
+Build the efficient frontier curve (4d(axes:%bobs,% aapl,% tsla, %expected_return) efficient frontier surface)
+Pick the best portfolio composition based off of e(x) for surface
+Move to a slightly more risk-averse position if risk_strat== risk_averse, stay constant if balanced, and to a more risk aggressive position if risk_strat == risk_agg
+Identify differences in current composition and selected composition
+Sell excess and buy missing
+Adjust/recommend composition for trades based off the trades given manually from AI (if the news has been updated)
+Update db, update portfolio value, update buying power and other helpful things necessary
+
+Minute ends
+Repeat
