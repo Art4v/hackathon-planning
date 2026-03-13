@@ -79,6 +79,7 @@ window.AppWindow = function AppWindow({ win, theme, connectedEdges, onClose, onF
     var instances = Draggable.create(windowRef.current, {
       type: 'top,left',
       trigger: windowRef.current.querySelector('.win-titlebar'),
+      allowContextMenu: true,
       zIndexBoost: false,
       cursor: 'grab',
       activeCursor: 'grabbing',
