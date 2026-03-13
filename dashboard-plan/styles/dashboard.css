@@ -435,6 +435,75 @@ body { font-family:'Segoe UI',system-ui,sans-serif; color:#1a1a1a; }
 .pay-btn.buy-btn  { background:#d1fae5; color:#065f46; border-color:#6ee7b7; box-shadow:0 4px 0 #34d399; }
 .pay-btn.sell-btn { background:#fee2e2; color:#7f1d1d; border-color:#fca5a5; box-shadow:0 4px 0 #f87171; }
 
+/* ── WINDOW ACTIONS ROW ── */
+.win-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ── SNAP LAYOUT POPUP ── */
+.snap-layout-popup {
+  position: fixed;
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1.5px solid rgba(0,0,0,0.1);
+  border-radius: 14px;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  gap: 6px;
+  z-index: 99999;
+  box-shadow: 0 10px 36px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
+  pointer-events: auto;
+}
+.snap-layout-item {
+  cursor: pointer;
+  border-radius: 7px;
+  padding: 3px;
+  border: 2px solid transparent;
+  transition: border-color 0.1s, background 0.1s;
+}
+.snap-layout-item:hover {
+  border-color: rgba(74,108,247,0.55);
+  background: rgba(74,108,247,0.07);
+}
+.snap-layout-screen {
+  width: 46px;
+  height: 34px;
+  background: #dce6f5;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  border: 1.5px solid #c0cfe0;
+}
+.snap-layout-highlight {
+  position: absolute;
+  background: rgba(74,108,247,0.55);
+  border-radius: 2px;
+  transition: background 0.1s;
+}
+.snap-layout-item:hover .snap-layout-highlight {
+  background: rgba(74,108,247,0.8);
+}
+
+/* Night mode */
+.desktop.night .snap-layout-popup {
+  background: rgba(18,28,50,0.97);
+  border-color: rgba(255,255,255,0.12);
+  box-shadow: 0 10px 36px rgba(0,0,0,0.4);
+}
+.desktop.night .snap-layout-screen {
+  background: #1a2640;
+  border-color: #2a3a5a;
+}
+.desktop.night .snap-layout-highlight {
+  background: rgba(106,126,196,0.6);
+}
+.desktop.night .snap-layout-item:hover .snap-layout-highlight {
+  background: rgba(106,126,196,0.9);
+}
 /* ── SNAP INDICATOR ── */
 .snap-indicator {
   position: absolute;
@@ -608,3 +677,144 @@ body { font-family:'Segoe UI',system-ui,sans-serif; color:#1a1a1a; }
 /* Scrollbar */
 .desktop.night ::-webkit-scrollbar-thumb { background: #334; }
 .desktop.night ::-webkit-scrollbar-track { background: transparent; }
+
+/* ── CORNER LAUNCHER ── */
+.corner-launcher {
+  position: fixed;
+  bottom: 16px;
+  width: 60px;
+  height: 68px;
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end;
+}
+.corner-launcher--left { left: 0; justify-content: flex-start; }
+.corner-launcher--right { right: 0; justify-content: flex-end; }
+
+.corner-launcher-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.25s ease, transform 0.25s ease, background 0.2s;
+  margin: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+}
+.corner-launcher:hover .corner-launcher-btn,
+.corner-launcher .corner-launcher-btn:focus {
+  opacity: 1;
+  transform: scale(1);
+}
+.corner-launcher-btn:hover {
+  background: rgba(255,255,255,0.85);
+}
+
+.corner-menu {
+  position: absolute;
+  bottom: 56px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+}
+.corner-launcher--left .corner-menu { left: 10px; }
+.corner-launcher--right .corner-menu { right: 10px; }
+
+.corner-menu-item {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  animation: cornerMenuIn 0.2s ease both;
+  transition: background 0.2s, transform 0.15s;
+}
+.corner-menu-item:hover {
+  background: rgba(255,255,255,0.95);
+  transform: scale(1.1);
+}
+
+.corner-menu-item--active {
+  box-shadow: 0 0 0 2px rgba(74,108,247,0.4), 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.corner-menu-dot {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4a6cf7;
+}
+
+.corner-menu-label {
+  position: absolute;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(30,30,30,0.85);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 6px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.corner-launcher--left .corner-menu-label { left: 52px; }
+.corner-launcher--right .corner-menu-label { right: 52px; }
+.corner-menu-item:hover .corner-menu-label { opacity: 1; }
+
+.corner-clear-all {
+  background: rgba(255,220,220,0.75);
+  border-color: rgba(220,100,100,0.4);
+}
+.corner-clear-all:hover {
+  background: rgba(255,200,200,0.95);
+}
+
+@keyframes cornerMenuIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.8); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Night mode */
+.desktop.night .corner-launcher-btn {
+  background: rgba(30,40,60,0.7);
+  border-color: rgba(255,255,255,0.15);
+}
+.desktop.night .corner-launcher-btn:hover {
+  background: rgba(40,50,70,0.9);
+}
+.desktop.night .corner-menu-item {
+  background: rgba(30,40,60,0.8);
+  border-color: rgba(255,255,255,0.12);
+}
+.desktop.night .corner-menu-item:hover {
+  background: rgba(40,55,80,0.95);
+}
+.desktop.night .corner-menu-item--active {
+  box-shadow: 0 0 0 2px rgba(74,108,247,0.5), 0 2px 8px rgba(0,0,0,0.2);
+}
+.desktop.night .corner-clear-all {
+  background: rgba(60,30,30,0.7);
+  border-color: rgba(200,80,80,0.3);
+}
+.desktop.night .corner-clear-all:hover {
+  background: rgba(80,35,35,0.9);
+}

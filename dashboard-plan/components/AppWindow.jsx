@@ -1,5 +1,17 @@
-window.AppWindow = function AppWindow({ win, theme, connectedEdges, onClose, onFocus, onDragEndWithSnap, getSnapTarget, onSnapUpdate, onResizeStart, onGroupDrag, onGroupDragEnd, registerWindowEl }) {
+var SNAP_LAYOUTS = [
+  { id: 'full',  x: 0,    y: 0,    w: 1,      h: 1   },
+  { id: 'left',  x: 0,    y: 0,    w: 0.5,    h: 1   },
+  { id: 'right', x: 0.5,  y: 0,    w: 0.5,    h: 1   },
+  { id: 'l23',   x: 0,    y: 0,    w: 0.6667, h: 1   },
+  { id: 'tl',    x: 0,    y: 0,    w: 0.5,    h: 0.5 },
+  { id: 'tr',    x: 0.5,  y: 0,    w: 0.5,    h: 0.5 },
+  { id: 'bl',    x: 0,    y: 0.5,  w: 0.5,    h: 0.5 },
+  { id: 'br',    x: 0.5,  y: 0.5,  w: 0.5,    h: 0.5 },
+];
+
+window.AppWindow = function AppWindow({ win, theme, connectedEdges, onClose, onFocus, onDragEndWithSnap, getSnapTarget, onSnapUpdate, onResizeStart, onGroupDrag, onGroupDragEnd, registerWindowEl, onSnapToLayout }) {
   const windowRef = React.useRef(null);
+  const titlebarRef = React.useRef(null);
   const draggableRef = React.useRef(null);
 
   // Store callback props in refs so GSAP callbacks always call latest versions
@@ -14,6 +26,42 @@ window.AppWindow = function AppWindow({ win, theme, connectedEdges, onClose, onF
   // Keep win in a ref for onDrag
   const winRef = React.useRef(win);
   winRef.current = win;
+
+  // Snap layout popup state (null=closed, {left,top}=open at cursor)
+  const [snapPopupPos, setSnapPopupPos] = React.useState(null);
+
+  // Attach contextmenu listener directly on titlebar with capture to beat GSAP Draggable on Windows
+  React.useEffect(function() {
+    var el = titlebarRef.current;
+    if (!el) return;
+    function handleContextMenu(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      var left = Math.min(e.clientX, window.innerWidth - 230);
+      var top = Math.min(e.clientY, window.innerHeight - 140);
+      setSnapPopupPos({ left: left, top: top });
+    }
+    el.addEventListener('contextmenu', handleContextMenu, { capture: true });
+    return function() {
+      el.removeEventListener('contextmenu', handleContextMenu, { capture: true });
+    };
+  }, []);
+
+  React.useEffect(function() {
+    if (!snapPopupPos) return;
+    function onDown() { setSnapPopupPos(null); }
+    function onKey(e) { if (e.key === 'Escape') setSnapPopupPos(null); }
+    var id = setTimeout(function() {
+      document.addEventListener('mousedown', onDown);
+      document.addEventListener('keydown', onKey);
+    }, 0);
+    return function() {
+      clearTimeout(id);
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [snapPopupPos]);
 
   // Register/unregister window element
   React.useEffect(function() {
@@ -42,6 +90,7 @@ window.AppWindow = function AppWindow({ win, theme, connectedEdges, onClose, onF
     var instances = Draggable.create(windowRef.current, {
       type: 'top,left',
       trigger: windowRef.current.querySelector('.win-titlebar'),
+      allowContextMenu: true,
       zIndexBoost: false,
       cursor: 'grab',
       activeCursor: 'grabbing',
@@ -119,13 +168,16 @@ window.AppWindow = function AppWindow({ win, theme, connectedEdges, onClose, onF
         zIndex: win.z,
         ...borderStyle,
       }}
-      onMouseDown={function() { onFocus(win.id); }}>
-      <div className="win-titlebar"
+      onMouseDown={function() { onFocus(win.id); }}
+>
+      <div className="win-titlebar" ref={titlebarRef}
         style={{ background: theme.bg, borderBottomColor: theme.border }}>
         <span className="win-title" style={{ color: theme.iconColor }}>{win.id}</span>
-        <button className="win-close" style={{ color: theme.iconColor }}
-          onMouseDown={function(e) { e.stopPropagation(); }}
-          onClick={function() { onClose(win.id); }}>[x]</button>
+        <div className="win-actions">
+          <button className="win-close" style={{ color: theme.iconColor }}
+            onMouseDown={function(e) { e.stopPropagation(); }}
+            onClick={function() { onClose(win.id); }}>[x]</button>
+        </div>
       </div>
       <div className="win-body" onMouseDown={function(e) { e.stopPropagation(); }} style={{ cursor: 'default' }}>
         <WindowContent id={win.id}/>
@@ -139,6 +191,30 @@ window.AppWindow = function AppWindow({ win, theme, connectedEdges, onClose, onF
             }}/>
         );
       })}
+      {snapPopupPos && (
+        <div className="snap-layout-popup"
+          style={{ left: snapPopupPos.left, top: snapPopupPos.top }}
+          onMouseDown={function(e) { e.stopPropagation(); }}>
+          {SNAP_LAYOUTS.map(function(layout) {
+            return (
+              <div key={layout.id} className="snap-layout-item"
+                onClick={function() {
+                  setSnapPopupPos(null);
+                  onSnapToLayout(win.id, layout);
+                }}>
+                <div className="snap-layout-screen">
+                  <div className="snap-layout-highlight" style={{
+                    left: (layout.x * 100) + '%',
+                    top: (layout.y * 100) + '%',
+                    width: (layout.w * 100) + '%',
+                    height: (layout.h * 100) + '%',
+                  }}/>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
